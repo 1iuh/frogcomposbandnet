@@ -5,6 +5,86 @@
 static inv_ptr _home = NULL;
 static inv_ptr _museum = NULL;
 
+/* Function to convert a hex string representation back to an object
+   This is useful for debugging or object deserialization */
+bool hex_to_obj(cptr hex_str, obj_ptr obj)
+{
+    byte *p = (byte *)obj;
+    size_t i, len;
+    
+    /* Check for NULL pointers */
+    if (!hex_str || !obj) return FALSE;
+    
+    /* Get the string length */
+    len = strlen(hex_str);
+    
+    /* Ensure the string is valid (even length, contains only hex chars) */
+    if (len % 2 != 0) return FALSE;
+    
+    /* Clear the object first */
+    object_wipe(obj);
+    
+    /* Convert hex pairs back to bytes */
+    for (i = 0; i < len / 2 && i < sizeof(obj_t); i++) 
+    {
+        byte hi, lo;
+        
+        /* Extract hex digits */
+        if (hex_str[i*2] >= '0' && hex_str[i*2] <= '9')
+            hi = hex_str[i*2] - '0';
+        else if (hex_str[i*2] >= 'A' && hex_str[i*2] <= 'F')
+            hi = hex_str[i*2] - 'A' + 10;
+        else if (hex_str[i*2] >= 'a' && hex_str[i*2] <= 'f')
+            hi = hex_str[i*2] - 'a' + 10;
+        else
+            return FALSE;
+
+        if (hex_str[i*2+1] >= '0' && hex_str[i*2+1] <= '9')
+            lo = hex_str[i*2+1] - '0';
+        else if (hex_str[i*2+1] >= 'A' && hex_str[i*2+1] <= 'F')
+            lo = hex_str[i*2+1] - 'A' + 10;
+        else if (hex_str[i*2+1] >= 'a' && hex_str[i*2+1] <= 'f')
+            lo = hex_str[i*2+1] - 'a' + 10;
+        else
+            return FALSE;
+            
+        /* Combine the nibbles */
+        p[i] = (hi << 4) | lo;
+    }
+    
+    /* Success */
+    return TRUE;
+}
+
+/* Function to dump an object to a hex string representation
+   This is useful for debugging or object serialization */
+void obj_dump_hex(obj_ptr obj, char *buf, size_t max)
+{
+    byte *p = (byte *)obj;
+    size_t i, size = sizeof(obj_t);
+    char *q = buf;
+    
+    /* Ensure we have at least some space */
+    if (max < 3) {
+        if (max > 0) *buf = '\0';
+        return;
+    }
+    
+    /* Cap at maximum available buffer space, allowing for null termination */
+    if (size * 2 >= max) size = (max - 1) / 2;
+    
+    /* Convert each byte to a 2-digit hex representation */
+    for (i = 0; i < size; i++)
+    {
+        byte b = *p++;
+        *q++ = hexsym[(b & 0xF0) >> 4];
+        *q++ = hexsym[b & 0x0F];
+    }
+    
+    /* Null terminate the string */
+    *q = '\0';
+}
+
 void home_init(void)
 {
     inv_free(_home);
@@ -384,6 +464,7 @@ static void _drop_aux(obj_ptr obj, _ui_context_ptr context)
     if (inv_loc(context->inv) == INV_MUSEUM)
     {
         msg_format("You donate %s.", name);
+
         museum_carry(obj);
         inv_sort(_museum);
         virtue_add(VIRTUE_SACRIFICE, 1); /* TODO: should depend on obj_value() */
@@ -500,15 +581,98 @@ static void _examine(_ui_context_ptr context)
         char    cmd;
         slot_t  slot;
         obj_ptr obj;
+        bool    show_hex = FALSE;
+        bool    from_hex = FALSE;
 
-        if (!msg_command("<color:y>Examine which item <color:w>(<color:keypress>Esc</color> when done)</color>?</color>", &cmd)) break;
+        if (!msg_command("<color:y>Examine which item <color:w>(<color:keypress>Esc</color> when done, <color:keypress>h</color> for hex dump, <color:keypress>l</color> to load from hex)</color>?</color>", &cmd)) break;
+        if (cmd == 'h' || cmd == 'H') {
+            show_hex = TRUE;
+            if (!msg_command("<color:y>Show hex dump of which item <color:w>(<color:keypress>Esc</color> when done)</color>?</color>", &cmd)) break;
+        }
+        else if (cmd == 'l' || cmd == 'L') {
+            from_hex = TRUE;
+            char hex_str[2048] = "";
+            const char prompt[] = "Enter hex string";
+            
+            screen_save();
+            Term_gotoxy(0, 0);
+            if (get_string(prompt, hex_str, sizeof(hex_str))) {
+                obj_t tmp_obj;
+                bool success = hex_to_obj(hex_str, &tmp_obj);
+                
+                if (success) {
+                    doc_ptr doc = doc_alloc(80);
+                    doc_insert(doc, "<style:heading>Loaded Object from Hex</style>\n\n");
+                    
+                    char name[MAX_NLEN];
+                    object_desc(name, &tmp_obj, OD_COLOR_CODED);
+                    doc_printf(doc, "Object: %s\n\n", name);
+                    
+                    doc_insert(doc, "<color:G>Successfully loaded object from hex string!</color>\n");
+                    doc_newline(doc);
+                    
+                    /* Display the object details */
+                    obj_display_doc(&tmp_obj, doc);
+                    
+                    doc_insert(doc, "<color:D>Press any key to continue</color>\n\n");
+                    doc_sync_term(doc, doc_range_all(doc), doc_pos_create(0, 0));
+                    inkey();
+                    doc_free(doc);
+                }
+                else {
+                    msg_print("<color:r>Error: Could not load object from hex string</color>");
+                    inkey();
+                }
+            }
+            screen_load();
+            continue;
+        }
+        
         if (cmd < 'a' || cmd > 'z') continue;
         slot = label_slot(cmd);
         slot = slot + context->top - 1;
         obj = inv_obj(context->inv, slot);
         if (!obj) continue;
 
-        obj_display(obj);
+        if (show_hex) {
+            char hex_buf[2048]; /* Should be more than enough for an obj_t */
+            obj_dump_hex(obj, hex_buf, sizeof(hex_buf));
+            
+            screen_save();
+            doc_ptr doc = doc_alloc(80);
+            doc_insert(doc, "<style:heading>Object Hex Dump</style>\n\n");
+            doc_printf(doc, "Memory size: %d bytes\n", (int)sizeof(obj_t));
+            
+            char name[MAX_NLEN];
+            object_desc(name, obj, OD_COLOR_CODED);
+            doc_printf(doc, "Object: %s\n\n", name);
+            
+            /* Format the hex dump in readable chunks */
+            int i, len = strlen(hex_buf);
+            for (i = 0; i < len; i += 32) {
+                char line[100];
+                int j;
+                for (j = 0; j < 32 && i+j < len; j += 2) {
+                    if (j > 0 && j % 4 == 0) {
+                        line[j/2*3 - 1] = ' ';  /* Add space every 2 bytes */
+                    }
+                    if (i+j < len) line[j/2*3] = hex_buf[i+j];
+                    if (i+j+1 < len) line[j/2*3+1] = hex_buf[i+j+1];
+                }
+                line[j/2*3 - (j%4==0?0:1)] = '\0';
+                doc_printf(doc, "%04X: %s\n", i/2, line);
+            }
+            
+            doc_newline(doc);
+            doc_insert(doc, "<color:D>Press any key to continue</color>\n\n");
+            doc_sync_term(doc, doc_range_all(doc), doc_pos_create(0, 0));
+            inkey();
+            screen_load();
+            doc_free(doc);
+        }
+        else {
+            obj_display(obj);
+        }
     }
 }
 

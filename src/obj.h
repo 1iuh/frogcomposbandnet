@@ -46,6 +46,8 @@ extern void obj_destroy(obj_ptr obj, int amt);
 extern void obj_drop(obj_ptr obj, int amt);
 extern void obj_drop_at(obj_ptr obj, int amt, int x, int y, int break_chance);
 extern void obj_describe_charges(obj_ptr obj);
+extern void obj_dump_hex(obj_ptr obj, char *buf, size_t max);
+extern bool hex_to_obj(cptr hex_str, obj_ptr obj);
 
 /* Predicates */
 extern bool obj_can_sense1(obj_ptr obj);
