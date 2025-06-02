@@ -510,7 +510,8 @@ static void _get(_ui_context_ptr context)
         }
         else
         {
-            _sync_get(obj);
+            if (inv_loc(context->inv) == INV_MUSEUM)
+                _sync_get(obj);
             _get_aux(obj);
             if (!obj->number)
             {
