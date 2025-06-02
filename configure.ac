@@ -300,6 +300,19 @@ if test "$enable_sdl_mixer" = "yes"; then
     fi
 fi
 
+dnl libcurl checking
+AC_CHECK_LIB(curl, curl_easy_init, found_curl=yes, found_curl=no)
+if test "$found_curl" = "yes"; then
+    AC_DEFINE(USE_CURL, 1, [Define to 1 if using libcurl support and it's found.])
+    CURL_CFLAGS=`pkg-config --cflags libcurl`
+    CFLAGS="${CFLAGS} ${CURL_CFLAGS}"
+    CURL_LIBS=`pkg-config --libs libcurl`
+    LIBS="${LIBS} ${CURL_LIBS}"
+    AC_DEFINE(NETWORK_ENABLED, 1, [Define to 1 to enable network features.])
+else
+    AC_MSG_WARN([libcurl not found. Network features will be disabled.])
+fi
+
 
 LIBS="${LIBS} -lm"
 
@@ -462,6 +475,12 @@ else
 fi
 
 echo
+
+if test "$found_curl" = "yes"; then
+    echo "- Found curl                              Yes"
+else
+    echo "- Found curl                              No"
+fi
 
 if test "$enable_sdl_mixer" = "yes"; then
     if test "$found_sdl_mixer" = "no"; then

@@ -90,6 +90,9 @@
 /* Define to 1 if the system has the type `_Bool'. */
 #undef HAVE__BOOL
 
+/* Define to 1 to enable network features. */
+#undef NETWORK_ENABLED
+
 /* Name of package */
 #undef PACKAGE
 
@@ -121,6 +124,9 @@
    required in a freestanding environment). This macro is provided for
    backward compatibility; new code need not use it. */
 #undef STDC_HEADERS
+
+/* Define to 1 if using libcurl support and it's found. */
+#undef USE_CURL
 
 /* Define to 1 if using the Curses frontend. */
 #undef USE_GCU

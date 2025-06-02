@@ -49,6 +49,7 @@
 #include "pack.h"
 #include "quiver.h"
 #include "home.h"
+#include "http.h"
 #include "rooms.h"
 #include "shop.h"
 #include "mon.h"

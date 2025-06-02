@@ -6711,6 +6711,64 @@ printf "%s\n" "#define SOUND_SDL 1" >>confdefs.h
     fi
 fi
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curl_easy_init in -lcurl" >&5
+printf %s "checking for curl_easy_init in -lcurl... " >&6; }
+if test ${ac_cv_lib_curl_curl_easy_init+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lcurl  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+char curl_easy_init ();
+int
+main (void)
+{
+return curl_easy_init ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_curl_curl_easy_init=yes
+else $as_nop
+  ac_cv_lib_curl_curl_easy_init=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curl_curl_easy_init" >&5
+printf "%s\n" "$ac_cv_lib_curl_curl_easy_init" >&6; }
+if test "x$ac_cv_lib_curl_curl_easy_init" = xyes
+then :
+  found_curl=yes
+else $as_nop
+  found_curl=no
+fi
+
+if test "$found_curl" = "yes"; then
+
+printf "%s\n" "#define USE_CURL 1" >>confdefs.h
+
+    CURL_CFLAGS=`pkg-config --cflags libcurl`
+    CFLAGS="${CFLAGS} ${CURL_CFLAGS}"
+    CURL_LIBS=`pkg-config --libs libcurl`
+    LIBS="${LIBS} ${CURL_LIBS}"
+
+printf "%s\n" "#define NETWORK_ENABLED 1" >>confdefs.h
+
+else
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: libcurl not found. Network features will be disabled." >&5
+printf "%s\n" "$as_me: WARNING: libcurl not found. Network features will be disabled." >&2;}
+fi
+
 
 LIBS="${LIBS} -lm"
 
@@ -8255,6 +8313,12 @@ else
 fi
 
 echo
+
+if test "$found_curl" = "yes"; then
+    echo "- Found curl                              Yes"
+else
+    echo "- Found curl                              No"
+fi
 
 if test "$enable_sdl_mixer" = "yes"; then
     if test "$found_sdl_mixer" = "no"; then
