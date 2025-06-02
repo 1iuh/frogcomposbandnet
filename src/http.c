@@ -94,10 +94,109 @@ bool make_http_request(const char *url, const char *post_data, http_response_t *
     return success;
 }
 
+#ifdef USE_CURL
+
+/* Function to make an HTTP POST request with JSON data */
+bool make_http_post(const char *url, const char *json_data, http_response_t *response)
+{
+    CURL *curl;
+    CURLcode res;
+    struct curl_slist *header_list = NULL;
+    bool success = FALSE;
+    
+    if (!response || !url || !json_data) return FALSE;
+    
+    /* Initialize response struct */
+    response->data = malloc(1);
+    response->size = 0;
+    
+    if (!response->data) return FALSE;
+    
+    /* Initialize libcurl globally if necessary */
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+    
+    /* Get a curl handle */
+    curl = curl_easy_init();
+    if (curl) {
+        /* Set the URL */
+        curl_easy_setopt(curl, CURLOPT_URL, url);
+        
+        /* Set HTTP method to POST */
+        curl_easy_setopt(curl, CURLOPT_POST, 1L);
+        
+        /* Set JSON data */
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_data);
+        
+        /* Set content type to JSON */
+        header_list = curl_slist_append(header_list, "Content-Type: application/json");
+        header_list = curl_slist_append(header_list, "Accept: application/json");
+        
+        /* Set headers */
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header_list);
+        
+        /* Send all data to the callback function */
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, _write_callback);
+        
+        /* Pass our response struct to the callback function */
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)response);
+        
+        /* Set a reasonable timeout */
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30);
+        
+        /* Set a user agent */
+        curl_easy_setopt(curl, CURLOPT_USERAGENT, "Frogcomposband/1.0");
+        
+        /* Follow redirects */
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+        
+        /* Perform the request */
+        res = curl_easy_perform(curl);
+        
+        /* Check for errors */
+        if (res != CURLE_OK) {
+            msg_format("<color:r>Error: HTTP JSON POST request failed: %s</color>", curl_easy_strerror(res));
+            if (response->data) {
+                free(response->data);
+                response->data = NULL;
+                response->size = 0;
+            }
+        } else {
+            success = TRUE;
+        }
+        
+        /* Free the header list */
+        if (header_list) {
+            curl_slist_free_all(header_list);
+        }
+        
+        /* Cleanup curl handle */
+        curl_easy_cleanup(curl);
+    }
+    
+    /* Always cleanup global initialization */
+    curl_global_cleanup();
+    
+    return success;
+}
+#endif /* USE_CURL make_http_post */
+
 #else /* USE_CURL */
 
 /* Stub implementation when libcurl is not available */
 bool make_http_request(const char *url, const char *post_data, http_response_t *response)
+{
+    msg_print("<color:r>Network features are not available. libcurl was not found during compilation.</color>");
+    
+    if (response) {
+        response->data = NULL;
+        response->size = 0;
+    }
+    
+    return FALSE;
+}
+
+/* Stub implementation of POST when libcurl is not available */
+bool make_http_post(const char *url, const char *post_data, char **headers, http_response_t *response)
 {
     msg_print("<color:r>Network features are not available. libcurl was not found during compilation.</color>");
     

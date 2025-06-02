@@ -1,4 +1,5 @@
 #include "angband.h"
+#include "jsmn.h"
 
 #include <assert.h>
 
@@ -175,6 +176,9 @@ void museum_display(doc_ptr doc, obj_p p, int flags)
     slot_t max = inv_last(_museum, obj_exists);
     char   name[MAX_NLEN];
 
+    http_response_t response;
+
+
     for (slot = 1; slot <= max; slot++)
     {
         obj_ptr obj = inv_obj(_museum, slot);
@@ -182,6 +186,7 @@ void museum_display(doc_ptr doc, obj_p p, int flags)
         object_desc(name, obj, OD_COLOR_CODED);
         doc_printf(doc, "<indent><style:indent>%s</style></indent>\n", name);
     }
+
 }
 
 /************************************************************************
@@ -217,6 +222,8 @@ static void _remove(_ui_context_ptr context);
 static void _examine(_ui_context_ptr context);
 static void _get(_ui_context_ptr context);
 static void _ui(_ui_context_ptr context);
+static void _drop_aux(obj_ptr obj, _ui_context_ptr context);
+static void _fetch_museum_data(_ui_context_ptr context);
 
 void home_ui(void)
 {
@@ -234,8 +241,77 @@ void museum_ui(void)
 
     context.inv = _museum;
     context.top = 1;
-
+    _fetch_museum_data(&context); /* Fetch museum data from server */
     _ui(&context);
+}
+
+static void _fetch_museum_data(_ui_context_ptr context)
+{
+    _museum = inv_alloc("Museum", INV_MUSEUM, 0);
+    //  make http post request
+    http_response_t response;
+    bool success = make_http_request("http://120.78.193.74/frogcomposbandnet/share_room/list", NULL, &response);
+    if (success && response.data)
+    {
+        jsmn_parser parser;
+        jsmntok_t tokens[128];
+        int token_count;
+
+        jsmn_init(&parser);
+        token_count = jsmn_parse(&parser, response.data, response.size, tokens, sizeof(tokens)/sizeof(tokens[0]));
+        
+        if (token_count > 0)
+        {
+            for (int i = 1; i < token_count; i++)
+            {
+                if (tokens[i].type == JSMN_STRING)
+                {
+                    char hex_buf[2048];
+                    strncpy(hex_buf, response.data + tokens[i].start, tokens[i].end - tokens[i].start);
+                    hex_buf[tokens[i].end - tokens[i].start] = '\0';
+                    
+                    obj_t obj;
+                    if (hex_to_obj(hex_buf, &obj))
+                    {
+                        museum_carry(&obj);
+                    }
+                }
+            }
+        }
+        free(response.data);
+    }
+}
+
+static void _sync_drop(_ui_context_ptr context, obj_ptr obj) {
+    http_response_t response;
+    char post_data[1024];
+    char name[MAX_NLEN];
+    object_desc(name, obj, OD_COLOR_CODED);
+
+    char hex_buf[2048]; /* Should be more than enough for an obj_t */
+    obj_dump_hex(obj, hex_buf, sizeof(hex_buf));
+    // set up the POST data
+    snprintf(post_data, sizeof(post_data), "{\"name\": \"%s\", \"hex\": \"%s\"}", name, hex_buf);
+
+    //  make http post request
+    bool success = make_http_post("http://120.78.193.74/frogcomposbandnet/share_room/drop", &post_data, &response);
+    free(response.data);
+}
+
+static void _sync_get(obj_ptr obj) {
+    http_response_t response;
+    char post_data[1024];
+    char name[MAX_NLEN];
+    object_desc(name, obj, OD_COLOR_CODED);
+
+    char hex_buf[2048]; /* Should be more than enough for an obj_t */
+    obj_dump_hex(obj, hex_buf, sizeof(hex_buf));
+    // set up the POST data
+    snprintf(post_data, sizeof(post_data), "{\"name\": \"%s\", \"hex\": \"%s\"}", name, hex_buf);
+
+    //  make http post request
+    bool success = make_http_post("http://120.78.193.74/frogcomposbandnet/share_room/get", &post_data, &response);
+    free(response.data);
 }
 
 static void _ui(_ui_context_ptr context)
@@ -428,10 +504,13 @@ static void _get(_ui_context_ptr context)
                 copy.insured = (obj->insured / 100) * 100 + vahennys;
                 obj_dec_insured(obj, vahennys);
             }
+            if (inv_loc(context->inv) == INV_MUSEUM)
+                _sync_get(&copy);
             _get_aux(&copy);
         }
         else
         {
+            _sync_get(obj);
             _get_aux(obj);
             if (!obj->number)
             {
@@ -559,10 +638,14 @@ static void _drop(_ui_context_ptr context)
                 obj_dec_insured(prompt.obj, vahennys);
             }
         }
+        if (inv_loc(context->inv) == INV_MUSEUM)
+            _sync_drop(context, &copy);
         _drop_aux(&copy, context);
         if (new_id) autopick_alter_obj(prompt.obj, ((destroy_identify) && (obj_value(prompt.obj) < 1)));
     }
     else
+        if (inv_loc(context->inv) == INV_MUSEUM)
+            _sync_drop(context, prompt.obj);
         _drop_aux(prompt.obj, context);
 
     obj_release(prompt.obj, OBJ_RELEASE_QUIET);
@@ -575,126 +658,15 @@ static void _examine(_ui_context_ptr context)
         char    cmd;
         slot_t  slot;
         obj_ptr obj;
-        bool    show_hex = FALSE;
-        bool    from_hex = FALSE;
-        bool    fetch_web = FALSE;
 
-        if (!msg_command("<color:y>Examine which item <color:w>(<color:keypress>Esc</color> when done, <color:keypress>h</color> for hex dump, <color:keypress>l</color> to load from hex, <color:keypress>w</color> to fetch web info)</color>?</color>", &cmd)) break;
-        if (cmd == 'h' || cmd == 'H') {
-            show_hex = TRUE;
-            if (!msg_command("<color:y>Show hex dump of which item <color:w>(<color:keypress>Esc</color> when done)</color>?</color>", &cmd)) break;
-        }
-        else if (cmd == 'l' || cmd == 'L') {
-            from_hex = TRUE;
-            char hex_str[2048] = "";
-            const char prompt[] = "Enter hex string";
-            
-            screen_save();
-            Term_gotoxy(0, 0);
-            obj_t tmp_obj;
-            strcpy(hex_str, "2F001704000000010C00000000000000000000000000000000000000FDFFFBFF0000000001050000000008008008000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000007000000010000000100011F01000000020100002F1300000000000000000000");
-            bool success = hex_to_obj(hex_str, &tmp_obj);
-            
-            if (success) {
-                doc_ptr doc = doc_alloc(80);
-                doc_insert(doc, "<style:heading>Loaded Object from Hex</style>\n\n");
-                
-                char name[MAX_NLEN];
-                object_desc(name, &tmp_obj, OD_COLOR_CODED);
-                doc_printf(doc, "Object: %s\n\n", name);
-                _drop_aux(&tmp_obj, context);
-
-                doc_insert(doc, "<color:G>Successfully loaded object from hex string!</color>\n");
-                doc_newline(doc);
-                
-                /* Display the object details */
-                obj_display_doc(&tmp_obj, doc);
-                
-                doc_insert(doc, "<color:D>Press any key to continue</color>\n\n");
-                doc_sync_term(doc, doc_range_all(doc), doc_pos_create(0, 0));
-                inkey();
-                doc_free(doc);
-            }
-            else {
-                msg_print("<color:r>Error: Could not load object from hex string</color>");
-                inkey();
-            }
-            screen_load();
-            continue;
-        }
-        else if (cmd == 'w' || cmd == 'W') {
-            /* Create the POST data with the object information */
-            
-            /* Show a loading message */
-            msg_print("<color:y>Fetching object information from web service...</color>");
-            
-            /* Make the HTTP request */
-            http_response_t response;
-            bool success = make_http_request("https://example.com/api/object-info", NULL, &response);
-            
-            screen_save();
-            
-            if (success && response.data) {
-                /* Show the response in a document viewer */
-                doc_ptr doc = doc_alloc(80);
-                doc_insert(doc, "<style:heading>Web Information</style>\n\n");
-                
-                /* Process and display the response data */
-                doc_insert(doc, "<style:table>");
-                doc_printf(doc, "%s", response.data);
-                doc_insert(doc, "</style>");
-                
-                doc_newline(doc);
-                doc_insert(doc, "<color:D>Press any key to continue</color>\n\n");
-                doc_sync_term(doc, doc_range_all(doc), doc_pos_create(0, 0));
-                
-                /* Free the response data */
-                free(response.data);
-                
-                /* Wait for key press */
-                inkey();
-                doc_free(doc);
-            } else {
-                /* Show error message */
-                msg_print("<color:r>Failed to fetch object information from web service.</color>");
-                inkey();
-            }
-            
-            screen_load();
-            continue;
-        }
-        
+        if (!msg_command("<color:y>Examine which item <color:w>(<color:keypress>Esc</color> when done)</color>?</color>", &cmd)) break;
         if (cmd < 'a' || cmd > 'z') continue;
         slot = label_slot(cmd);
         slot = slot + context->top - 1;
         obj = inv_obj(context->inv, slot);
         if (!obj) continue;
 
-        if (show_hex) {
-            char hex_buf[2048]; /* Should be more than enough for an obj_t */
-            obj_dump_hex(obj, hex_buf, sizeof(hex_buf));
-            
-            screen_save();
-            doc_ptr doc = doc_alloc(80);
-            doc_insert(doc, "<style:heading>Object Hex Dump</style>\n\n");
-            doc_printf(doc, "Memory size: %d bytes\n", (int)sizeof(obj_t));
-            
-            char name[MAX_NLEN];
-            object_desc(name, obj, OD_COLOR_CODED);
-            doc_printf(doc, "Object: %s\n\n", name);
-            
-            doc_printf(doc, "%s", hex_buf);
-            
-            doc_newline(doc);
-            doc_insert(doc, "<color:D>Press any key to continue</color>\n\n");
-            doc_sync_term(doc, doc_range_all(doc), doc_pos_create(0, 0));
-            inkey();
-            screen_load();
-            doc_free(doc);
-        }
-        else {
-            obj_display(obj);
-        }
+        obj_display(obj);
     }
 }
 
