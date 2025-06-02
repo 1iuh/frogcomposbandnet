@@ -398,12 +398,6 @@ static void _get_aux(obj_ptr obj)
 
 static void _get(_ui_context_ptr context)
 {
-    if (inv_loc(context->inv) == INV_MUSEUM)
-    {
-        msg_print("All donations are <color:v>FINAL</color>!");
-        return;
-    }
-    assert(context->inv == _home);
     for (;;)
     {
         char    cmd;
@@ -583,8 +577,9 @@ static void _examine(_ui_context_ptr context)
         obj_ptr obj;
         bool    show_hex = FALSE;
         bool    from_hex = FALSE;
+        bool    fetch_web = FALSE;
 
-        if (!msg_command("<color:y>Examine which item <color:w>(<color:keypress>Esc</color> when done, <color:keypress>h</color> for hex dump, <color:keypress>l</color> to load from hex)</color>?</color>", &cmd)) break;
+        if (!msg_command("<color:y>Examine which item <color:w>(<color:keypress>Esc</color> when done, <color:keypress>h</color> for hex dump, <color:keypress>l</color> to load from hex, <color:keypress>w</color> to fetch web info)</color>?</color>", &cmd)) break;
         if (cmd == 'h' || cmd == 'H') {
             show_hex = TRUE;
             if (!msg_command("<color:y>Show hex dump of which item <color:w>(<color:keypress>Esc</color> when done)</color>?</color>", &cmd)) break;
@@ -596,34 +591,75 @@ static void _examine(_ui_context_ptr context)
             
             screen_save();
             Term_gotoxy(0, 0);
-            if (get_string(prompt, hex_str, sizeof(hex_str))) {
-                obj_t tmp_obj;
-                bool success = hex_to_obj(hex_str, &tmp_obj);
+            obj_t tmp_obj;
+            strcpy(hex_str, "2F001704000000010C00000000000000000000000000000000000000FDFFFBFF0000000001050000000008008008000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000007000000010000000100011F01000000020100002F1300000000000000000000");
+            bool success = hex_to_obj(hex_str, &tmp_obj);
+            
+            if (success) {
+                doc_ptr doc = doc_alloc(80);
+                doc_insert(doc, "<style:heading>Loaded Object from Hex</style>\n\n");
                 
-                if (success) {
-                    doc_ptr doc = doc_alloc(80);
-                    doc_insert(doc, "<style:heading>Loaded Object from Hex</style>\n\n");
-                    
-                    char name[MAX_NLEN];
-                    object_desc(name, &tmp_obj, OD_COLOR_CODED);
-                    doc_printf(doc, "Object: %s\n\n", name);
-                    
-                    doc_insert(doc, "<color:G>Successfully loaded object from hex string!</color>\n");
-                    doc_newline(doc);
-                    
-                    /* Display the object details */
-                    obj_display_doc(&tmp_obj, doc);
-                    
-                    doc_insert(doc, "<color:D>Press any key to continue</color>\n\n");
-                    doc_sync_term(doc, doc_range_all(doc), doc_pos_create(0, 0));
-                    inkey();
-                    doc_free(doc);
-                }
-                else {
-                    msg_print("<color:r>Error: Could not load object from hex string</color>");
-                    inkey();
-                }
+                char name[MAX_NLEN];
+                object_desc(name, &tmp_obj, OD_COLOR_CODED);
+                doc_printf(doc, "Object: %s\n\n", name);
+                _drop_aux(&tmp_obj, context);
+
+                doc_insert(doc, "<color:G>Successfully loaded object from hex string!</color>\n");
+                doc_newline(doc);
+                
+                /* Display the object details */
+                obj_display_doc(&tmp_obj, doc);
+                
+                doc_insert(doc, "<color:D>Press any key to continue</color>\n\n");
+                doc_sync_term(doc, doc_range_all(doc), doc_pos_create(0, 0));
+                inkey();
+                doc_free(doc);
             }
+            else {
+                msg_print("<color:r>Error: Could not load object from hex string</color>");
+                inkey();
+            }
+            screen_load();
+            continue;
+        }
+        else if (cmd == 'w' || cmd == 'W') {
+            /* Create the POST data with the object information */
+            
+            /* Show a loading message */
+            msg_print("<color:y>Fetching object information from web service...</color>");
+            
+            /* Make the HTTP request */
+            http_response_t response;
+            bool success = make_http_request("https://example.com/api/object-info", NULL, &response);
+            
+            screen_save();
+            
+            if (success && response.data) {
+                /* Show the response in a document viewer */
+                doc_ptr doc = doc_alloc(80);
+                doc_insert(doc, "<style:heading>Web Information</style>\n\n");
+                
+                /* Process and display the response data */
+                doc_insert(doc, "<style:table>");
+                doc_printf(doc, "%s", response.data);
+                doc_insert(doc, "</style>");
+                
+                doc_newline(doc);
+                doc_insert(doc, "<color:D>Press any key to continue</color>\n\n");
+                doc_sync_term(doc, doc_range_all(doc), doc_pos_create(0, 0));
+                
+                /* Free the response data */
+                free(response.data);
+                
+                /* Wait for key press */
+                inkey();
+                doc_free(doc);
+            } else {
+                /* Show error message */
+                msg_print("<color:r>Failed to fetch object information from web service.</color>");
+                inkey();
+            }
+            
             screen_load();
             continue;
         }
@@ -647,21 +683,7 @@ static void _examine(_ui_context_ptr context)
             object_desc(name, obj, OD_COLOR_CODED);
             doc_printf(doc, "Object: %s\n\n", name);
             
-            /* Format the hex dump in readable chunks */
-            int i, len = strlen(hex_buf);
-            for (i = 0; i < len; i += 32) {
-                char line[100];
-                int j;
-                for (j = 0; j < 32 && i+j < len; j += 2) {
-                    if (j > 0 && j % 4 == 0) {
-                        line[j/2*3 - 1] = ' ';  /* Add space every 2 bytes */
-                    }
-                    if (i+j < len) line[j/2*3] = hex_buf[i+j];
-                    if (i+j+1 < len) line[j/2*3+1] = hex_buf[i+j+1];
-                }
-                line[j/2*3 - (j%4==0?0:1)] = '\0';
-                doc_printf(doc, "%04X: %s\n", i/2, line);
-            }
+            doc_printf(doc, "%s", hex_buf);
             
             doc_newline(doc);
             doc_insert(doc, "<color:D>Press any key to continue</color>\n\n");
