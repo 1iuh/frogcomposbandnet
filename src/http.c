@@ -71,10 +71,11 @@ bool make_http_request(const char *url, const char *post_data, http_response_t *
         
         /* Perform the request */
         res = curl_easy_perform(curl);
+        long http_code = 0;
+        curl_easy_getinfo (curl, CURLINFO_RESPONSE_CODE, &http_code);
         
         /* Check for errors */
-        if (res != CURLE_OK) {
-            msg_format("<color:r>Error: HTTP request failed: %s</color>", curl_easy_strerror(res));
+        if (res != CURLE_OK || http_code != 200) {
             if (response->data) {
                 free(response->data);
                 response->data = NULL;
@@ -151,10 +152,12 @@ bool make_http_post(const char *url, const char *json_data, http_response_t *res
         
         /* Perform the request */
         res = curl_easy_perform(curl);
+
+        long http_code = 0;
+        curl_easy_getinfo (curl, CURLINFO_RESPONSE_CODE, &http_code);
         
         /* Check for errors */
-        if (res != CURLE_OK) {
-            msg_format("<color:r>Error: HTTP JSON POST request failed: %s</color>", curl_easy_strerror(res));
+        if (res != CURLE_OK || http_code != 200) {
             if (response->data) {
                 free(response->data);
                 response->data = NULL;

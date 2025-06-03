@@ -191,6 +191,7 @@ void museum_display(doc_ptr doc, obj_p p, int flags)
 
 }
 
+
 /************************************************************************
  * Savefiles
  ***********************************************************************/
@@ -225,29 +226,8 @@ static void _examine(_ui_context_ptr context);
 static void _get(_ui_context_ptr context);
 static void _ui(_ui_context_ptr context);
 static void _drop_aux(obj_ptr obj, _ui_context_ptr context);
-static void _fetch_museum_data(_ui_context_ptr context);
 
-void home_ui(void)
-{
-    _ui_context_t context = {0};
-
-    context.inv = _home;
-    context.top = 1;
-
-    _ui(&context);
-}
-
-void museum_ui(void)
-{
-    _ui_context_t context = {0};
-    _fetch_museum_data(&context); /* Fetch museum data from server */
-
-    context.inv = _museum;
-    context.top = 1;
-    _ui(&context);
-}
-
-static void _fetch_museum_data(_ui_context_ptr context)
+bool _fetch_museum_data(_ui_context_ptr context)
 {
     _museum = inv_alloc("Museum", INV_MUSEUM, 0);
     //  make http post request
@@ -256,7 +236,7 @@ static void _fetch_museum_data(_ui_context_ptr context)
     if (success && response.data)
     {
         jsmn_parser parser;
-        jsmntok_t tokens[128];
+        jsmntok_t tokens[1024];
         int token_count;
 
         jsmn_init(&parser);
@@ -309,9 +289,11 @@ static void _fetch_museum_data(_ui_context_ptr context)
         }
         free(response.data);
     }
+
+    return success;
 }
 
-static void _sync_drop(_ui_context_ptr context, obj_ptr obj) {
+bool _sync_drop(_ui_context_ptr context, obj_ptr obj) {
     http_response_t response;
     char post_data[1024];
     char name[MAX_NLEN];
@@ -326,9 +308,10 @@ static void _sync_drop(_ui_context_ptr context, obj_ptr obj) {
     //  make http post request
     bool success = make_http_post("http://120.78.193.74/frogcomposbandnet/share_room/drop", &post_data, &response);
     free(response.data);
+    return success;
 }
 
-static void _sync_get(obj_ptr obj) {
+bool _sync_get(obj_ptr obj) {
     http_response_t response;
     char post_data[1024];
     char name[MAX_NLEN];
@@ -343,7 +326,35 @@ static void _sync_get(obj_ptr obj) {
     //  make http post request
     bool success = make_http_post("http://120.78.193.74/frogcomposbandnet/share_room/get", &post_data, &response);
     free(response.data);
+    return success;
 }
+
+
+
+void home_ui(void)
+{
+    _ui_context_t context = {0};
+
+    context.inv = _home;
+    context.top = 1;
+
+    _ui(&context);
+}
+
+void museum_ui(void)
+{
+    _ui_context_t context = {0};
+    int success = _fetch_museum_data(&context);
+    if (!success){
+        msg_format("<color:R>Failed to fetch museum data.</color>");
+        return;
+    }
+
+    context.inv = _museum;
+    context.top = 1;
+    _ui(&context);
+}
+
 
 static void _ui(_ui_context_ptr context)
 {
@@ -524,6 +535,13 @@ static void _get(_ui_context_ptr context)
         {
             if (!msg_input_num("Quantity", &amt, 1, obj->number)) continue;
         }
+
+        if (inv_loc(context->inv) == INV_MUSEUM)
+            if(!_sync_get(obj)) {
+                msg_print("<color:R>Failed to get item from museum. Please try again later.</color>");
+                continue;
+            }
+
         if (amt < obj->number)
         {
             obj_t copy = *obj;
@@ -535,14 +553,10 @@ static void _get(_ui_context_ptr context)
                 copy.insured = (obj->insured / 100) * 100 + vahennys;
                 obj_dec_insured(obj, vahennys);
             }
-            if (inv_loc(context->inv) == INV_MUSEUM)
-                _sync_get(&copy);
             _get_aux(&copy);
         }
         else
         {
-            if (inv_loc(context->inv) == INV_MUSEUM)
-                _sync_get(obj);
             _get_aux(obj);
             if (!obj->number)
             {
@@ -642,14 +656,12 @@ static void _drop(_ui_context_ptr context)
         if (!msg_input_num("Quantity", &amt, 1, prompt.obj->number)) return;
     }
 
-    // if (inv_loc(context->inv) == INV_MUSEUM)
-    // {
-    //     if (!object_is_known(prompt.obj)) new_id = TRUE;
-    //     /* *identify* here rather than in _drop_aux in case the user splits a pile. */
-    //     no_karrot_hack = TRUE;
-    //     obj_identify_fully(prompt.obj);
-    //     no_karrot_hack = FALSE;
-    // }
+    if (inv_loc(context->inv) == INV_MUSEUM)
+        if (!_sync_drop(context, prompt.obj)) {
+            msg_print("<color:R>Failed to donate item to museum. Please try again later.</color>");
+            return;
+        }
+
 
     if (prompt.obj->loc.where == INV_EQUIP)
     {
@@ -660,6 +672,7 @@ static void _drop(_ui_context_ptr context)
         p_ptr->redraw |= PR_EQUIPPY;
         p_ptr->window |= PW_EQUIP;        
     }
+
 
     if (amt < prompt.obj->number)
     {
@@ -676,14 +689,10 @@ static void _drop(_ui_context_ptr context)
                 obj_dec_insured(prompt.obj, vahennys);
             }
         }
-        if (inv_loc(context->inv) == INV_MUSEUM)
-            _sync_drop(context, &copy);
         _drop_aux(&copy, context);
         if (new_id) autopick_alter_obj(prompt.obj, ((destroy_identify) && (obj_value(prompt.obj) < 1)));
     }
     else
-        if (inv_loc(context->inv) == INV_MUSEUM)
-            _sync_drop(context, prompt.obj);
         _drop_aux(prompt.obj, context);
 
     obj_release(prompt.obj, OBJ_RELEASE_QUIET);
