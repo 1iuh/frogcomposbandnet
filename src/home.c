@@ -261,24 +261,50 @@ static void _fetch_museum_data(_ui_context_ptr context)
 
         jsmn_init(&parser);
         token_count = jsmn_parse(&parser, response.data, response.size, tokens, sizeof(tokens)/sizeof(tokens[0]));
+
         
+        // json example:
+        // [{"hex": "000102030405060708090A0B0C0D0E0F", "number": 1}, {"hex": "101112131415161718191A1B1C1D1E1F", "number": 2}]
+        // where each object has a "hex" field with a hex string and a "number" field
         if (token_count > 0)
         {
-            for (int i = 1; i < token_count; i++)
+            for(int i = 0; i < token_count; i++)
             {
-                if (tokens[i].type == JSMN_STRING)
+                if (tokens[i].type != JSMN_OBJECT) continue;
+
+                // Find "hex" and "number" fields
+                char hex_buf[2048];
+                int number = 0;
+                for (;;) {
+                    i++;
+                    if (i >= token_count) break; // Prevent out of bounds
+                    if (tokens[i].type == JSMN_STRING && tokens[i].size == 1) {
+                        // Check for "hex" field
+                        if (strncmp(response.data + tokens[i].start, "hex", tokens[i].end - tokens[i].start) == 0) {
+                            i++; // Move to the value
+                            strncpy(hex_buf, response.data + tokens[i].start, tokens[i].end - tokens[i].start);
+                            hex_buf[tokens[i].end - tokens[i].start] = '\0';
+                        }
+                        // Check for "number" field
+                        else if (strncmp(response.data + tokens[i].start, "number", tokens[i].end - tokens[i].start) == 0) {
+                            i++; // Move to the value
+                            number = atoi(response.data + tokens[i].start);
+                        }
+                    }
+                    if (i >= token_count || tokens[i].type != JSMN_STRING) break; // Exit loop if not a string
+                }
+
+                if (hex_buf)
                 {
-                    char hex_buf[2048];
-                    strncpy(hex_buf, response.data + tokens[i].start, tokens[i].end - tokens[i].start);
-                    hex_buf[tokens[i].end - tokens[i].start] = '\0';
-                    
-                    obj_t obj;
-                    if (hex_to_obj(hex_buf, &obj))
+                    obj_ptr obj = obj_alloc();
+                    if (hex_to_obj(hex_buf, obj))
                     {
-                        museum_carry(&obj);
+                        obj->number = number;
+                        museum_carry(obj);
                     }
                 }
             }
+
             inv_sort(_museum);
         }
         free(response.data);
@@ -289,12 +315,13 @@ static void _sync_drop(_ui_context_ptr context, obj_ptr obj) {
     http_response_t response;
     char post_data[1024];
     char name[MAX_NLEN];
-    object_desc(name, obj, OD_COLOR_CODED);
+    object_desc(name, obj, OD_OMIT_INSCRIPTION);
 
     char hex_buf[2048]; /* Should be more than enough for an obj_t */
     obj_dump_hex(obj, hex_buf, sizeof(hex_buf));
     // set up the POST data
-    snprintf(post_data, sizeof(post_data), "{\"name\": \"%s\", \"hex\": \"%s\"}", name, hex_buf);
+    snprintf(post_data, sizeof(post_data), "{\"name\": \"%s\", \"hex\": \"%s\", \"k_idx\": %d, \"tval\": %d, \"sval\": %d, \"pval\": %d, \"name2\": %d, \"name3\": %d, \"number\": %d}",
+     name, hex_buf, obj->k_idx, obj->tval, obj->sval, obj->pval, obj->name2, obj->name3, obj->number);
 
     //  make http post request
     bool success = make_http_post("http://120.78.193.74/frogcomposbandnet/share_room/drop", &post_data, &response);
@@ -310,7 +337,8 @@ static void _sync_get(obj_ptr obj) {
     char hex_buf[2048]; /* Should be more than enough for an obj_t */
     obj_dump_hex(obj, hex_buf, sizeof(hex_buf));
     // set up the POST data
-    snprintf(post_data, sizeof(post_data), "{\"name\": \"%s\", \"hex\": \"%s\"}", name, hex_buf);
+    snprintf(post_data, sizeof(post_data), "{\"k_idx\": %d, \"tval\": %d, \"sval\": %d, \"pval\": %d, \"name2\": %d, \"name3\": %d, \"number\": %d}",
+     obj->k_idx, obj->tval, obj->sval, obj->pval, obj->name2, obj->name3, obj->number);
 
     //  make http post request
     bool success = make_http_post("http://120.78.193.74/frogcomposbandnet/share_room/get", &post_data, &response);
