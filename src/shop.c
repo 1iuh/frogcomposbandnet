@@ -495,6 +495,34 @@ static bool _create(obj_ptr obj, int k_idx, int lvl, u32b mode)
     return TRUE;
 }
 
+int calculate_obj_level_requirement(obj_ptr obj) {
+
+    int value = obj_value(obj);
+
+    int adjust = ((value / 200000) * 4 - 2) * 0.5;
+    int level = obj->level;
+    
+    if (level < 10) {
+        level = 10; // Ensure minimum level is 10
+    } else if (level > 100) {
+        level = 100; // Ensure maximum level is 100
+    }
+    int base_level = 0;
+
+    if (level <= 10) {
+        // 0-10级区间：线性增长0→1级
+        base_level = 1.0;
+    } else if(level <= 50) {
+        // 10-50级区间：线性增长1→39级
+        base_level = 1 + (level - 10) * 38 / 40;
+    } else {
+        // 50-100级区间：线性增长39→45级
+        base_level = 39 + (level - 50) * 6 / 50;
+    }
+    
+    return base_level + adjust;
+}
+
 /************************************************************************
  * The General Store
  ***********************************************************************/
@@ -2395,7 +2423,7 @@ static void _display_inv(doc_ptr doc, shop_ptr shop, slot_t top, int page_size)
         if (show_values)
             doc_printf(doc, " %6.6s", "Score");
         if (show_level)
-            doc_printf(doc, " %6.6s", "Level");
+            doc_printf(doc, " %6.6s", "rLvl");
     }
     doc_newline(doc);
 
@@ -2462,7 +2490,7 @@ static void _display_inv(doc_ptr doc, shop_ptr shop, slot_t top, int page_size)
                     }
                     if (show_level)
                     {
-                        doc_printf(doc, " %6d", obj->level);
+                        doc_printf(doc, " %6d", calculate_obj_level_requirement(obj));
                     }
                 }
             }

@@ -6,6 +6,9 @@
 static inv_ptr _home = NULL;
 static inv_ptr _museum = NULL;
 
+
+
+
 /* Function to convert a hex string representation back to an object
    This is useful for debugging or object deserialization */
 bool hex_to_obj(cptr hex_str, obj_ptr obj)
@@ -539,7 +542,7 @@ static void _get(_ui_context_ptr context)
 
         if (inv_loc(context->inv) == INV_MUSEUM)
         {
-            if(p_ptr->lev < obj->level) {
+            if(p_ptr->lev < calculate_obj_level_requirement(obj)) {
                 msg_print("<color:R>You are not high enough level to get this item from the museum.</color>");
                 continue;
             }
