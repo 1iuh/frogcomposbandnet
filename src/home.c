@@ -130,6 +130,8 @@ void home_carry(obj_ptr obj)
 
 static void museum_carry(obj_ptr obj)
 {
+
+    obj->inscription = 0; // Clear inscription
     if (obj->number)
         inv_combine_ex(_museum, obj);
     if (obj->number)
@@ -238,10 +240,10 @@ void home_ui(void)
 void museum_ui(void)
 {
     _ui_context_t context = {0};
+    _fetch_museum_data(&context); /* Fetch museum data from server */
 
     context.inv = _museum;
     context.top = 1;
-    _fetch_museum_data(&context); /* Fetch museum data from server */
     _ui(&context);
 }
 
@@ -277,6 +279,7 @@ static void _fetch_museum_data(_ui_context_ptr context)
                     }
                 }
             }
+            inv_sort(_museum);
         }
         free(response.data);
     }
