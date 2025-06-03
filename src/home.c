@@ -306,7 +306,7 @@ bool _sync_drop(_ui_context_ptr context, obj_ptr obj) {
      name, hex_buf, obj->k_idx, obj->tval, obj->sval, obj->pval, obj->name2, obj->name3, obj->number);
 
     //  make http post request
-    bool success = make_http_post("http://120.78.193.74/frogcomposbandnet/share_room/drop", &post_data, &response);
+    bool success = make_http_post("http://120.78.193.74/frogcomposbandnet/share_room/drop", post_data, &response);
     free(response.data);
     return success;
 }
@@ -324,7 +324,7 @@ bool _sync_get(obj_ptr obj) {
      obj->k_idx, obj->tval, obj->sval, obj->pval, obj->name2, obj->name3, obj->number);
 
     //  make http post request
-    bool success = make_http_post("http://120.78.193.74/frogcomposbandnet/share_room/get", &post_data, &response);
+    bool success = make_http_post("http://120.78.193.74/frogcomposbandnet/share_room/get", post_data, &response);
     free(response.data);
     return success;
 }
