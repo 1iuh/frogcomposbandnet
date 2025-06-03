@@ -605,14 +605,14 @@ static void _drop(_ui_context_ptr context)
         if (!msg_input_num("Quantity", &amt, 1, prompt.obj->number)) return;
     }
 
-    if (inv_loc(context->inv) == INV_MUSEUM)
-    {
-        if (!object_is_known(prompt.obj)) new_id = TRUE;
-        /* *identify* here rather than in _drop_aux in case the user splits a pile. */
-        no_karrot_hack = TRUE;
-        obj_identify_fully(prompt.obj);
-        no_karrot_hack = FALSE;
-    }
+    // if (inv_loc(context->inv) == INV_MUSEUM)
+    // {
+    //     if (!object_is_known(prompt.obj)) new_id = TRUE;
+    //     /* *identify* here rather than in _drop_aux in case the user splits a pile. */
+    //     no_karrot_hack = TRUE;
+    //     obj_identify_fully(prompt.obj);
+    //     no_karrot_hack = FALSE;
+    // }
 
     if (prompt.obj->loc.where == INV_EQUIP)
     {
