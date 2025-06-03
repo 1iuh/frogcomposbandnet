@@ -536,7 +536,12 @@ static void _get(_ui_context_ptr context)
             if (!msg_input_num("Quantity", &amt, 1, obj->number)) continue;
         }
 
+
         if (inv_loc(context->inv) == INV_MUSEUM)
+            if(p_ptr->lev < obj->level) {
+                msg_print("<color:R>You are not high enough level to get this item from the museum.</color>");
+                continue;
+            }
             if(!_sync_get(obj)) {
                 msg_print("<color:R>Failed to get item from museum. Please try again later.</color>");
                 continue;

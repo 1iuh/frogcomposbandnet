@@ -2372,13 +2372,16 @@ static void _display_inv(doc_ptr doc, shop_ptr shop, slot_t top, int page_size)
     char    name[MAX_NLEN];
     inv_ptr inv = shop->inv;
     bool    show_prices = inv_loc(inv) == INV_SHOP;
-    bool    show_values = inv_loc(inv) != INV_SHOP || p_ptr-> wizard;
+    bool    show_values = (inv_loc(inv) != INV_SHOP || p_ptr-> wizard) && !inv_loc(inv) == INV_MUSEUM;
+    bool    show_level = inv_loc(inv) == INV_MUSEUM;
 
     if (show_weights)
         xtra += 10;  /* " 123.0 lbs" */
     if (show_prices)
         xtra += 7;
     if (show_values)
+        xtra += 7;
+    if (show_level)
         xtra += 7;
 
     doc_insert(doc, "    Item Description");
@@ -2391,6 +2394,8 @@ static void _display_inv(doc_ptr doc, shop_ptr shop, slot_t top, int page_size)
             doc_printf(doc, " %6.6s", "Price");
         if (show_values)
             doc_printf(doc, " %6.6s", "Score");
+        if (show_level)
+            doc_printf(doc, " %6.6s", "Level");
     }
     doc_newline(doc);
 
@@ -2430,7 +2435,7 @@ static void _display_inv(doc_ptr doc, shop_ptr shop, slot_t top, int page_size)
                     int wgt = obj->weight; /* single object only for home/shops */
                     doc_printf(doc, " %3d.%d lbs", wgt/10, wgt%10);
                 }
-                if (show_prices || show_values)
+                if (show_prices || show_values || show_level)
                 {
                     int value = obj_value(obj);
 
@@ -2454,6 +2459,10 @@ static void _display_inv(doc_ptr doc, shop_ptr shop, slot_t top, int page_size)
                             doc_printf(doc, " %6s", tmp);
                         }
                         else doc_printf(doc, " %6d", value);
+                    }
+                    if (show_level)
+                    {
+                        doc_printf(doc, " %6d", obj->level);
                     }
                 }
             }
