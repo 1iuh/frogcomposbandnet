@@ -57,6 +57,7 @@ extern bool obj_exists(obj_ptr obj);
 extern bool obj_is_ammo(obj_ptr obj);
 extern bool obj_is_armor(obj_ptr obj);
 extern bool obj_is_art(obj_ptr obj);
+extern bool obj_is_true_art(obj_ptr obj);
 extern bool obj_is_blessed(obj_ptr obj);
 extern bool obj_is_book(obj_ptr obj);
 extern bool obj_is_device(obj_ptr obj);

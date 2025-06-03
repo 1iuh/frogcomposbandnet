@@ -578,6 +578,12 @@ static void _drop(_ui_context_ptr context)
     obj_prompt(&prompt);
     if (!prompt.obj) return;
 
+    if (obj_is_true_art(prompt.obj) && inv_loc(context->inv) == INV_MUSEUM)
+    {
+        msg_print("You cannot donate true artifacts to the museum.");
+        return;
+    }
+
     if (prompt.obj->loc.where == INV_EQUIP)
     {
         if (prompt.obj->tval == TV_QUIVER && quiver_count(NULL))
