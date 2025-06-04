@@ -41,6 +41,7 @@ extern void     shop_display_inv(doc_ptr doc, inv_ptr inv, slot_t top, int page_
 extern void     shop_save(shop_ptr shop, savefile_ptr file);
 
 
+
 /************************************************************************
  * Towns
  ***********************************************************************/
@@ -91,6 +92,7 @@ extern bool     town_visited(int which);
 extern cptr     town_name(int which);
 
 extern int      town_service_price(int price);
+extern int      calculate_obj_level_requirement(obj_ptr obj);
 
 extern void     birth_shop_items(void);
 #endif

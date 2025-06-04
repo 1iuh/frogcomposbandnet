@@ -1,5 +1,6 @@
 #include "angband.h"
 #include "jsmn.h"
+#include "shop.h"
 
 #include <assert.h>
 
