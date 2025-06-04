@@ -1689,7 +1689,7 @@ void object_desc(char *buf, object_type *o_ptr, u32b mode)
         {
             if (o_ptr->art_name == 1) /* Out-of-room emergency quark */
             {
-                char tmpbuf[20] = " 'Nameless Thing'";
+                char tmpbuf[20] = " 'Nameless'";
                 t = object_desc_str(t, tmpbuf);
             }
             else

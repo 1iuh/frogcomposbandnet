@@ -284,6 +284,7 @@ bool _fetch_museum_data(_ui_context_ptr context)
                     if (hex_to_obj(hex_buf, obj))
                     {
                         obj->number = number;
+                        if (obj->art_name) obj->art_name = 1;
                         museum_carry(obj);
                     }
                 }
