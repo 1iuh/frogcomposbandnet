@@ -1509,6 +1509,9 @@ void obj_display_doc(object_type *o_ptr, doc_ptr doc)
     _display_ignore(flgs, doc);
     _display_score(o_ptr, doc);
 
+    // printf object level
+    // doc_printf(doc, "<color:U>Level:</color> <color:B>%d</color>\n", o_ptr->level);
+
     if (object_is_wearable(o_ptr))
     {
         doc_newline(doc);

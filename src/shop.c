@@ -508,7 +508,7 @@ int calculate_obj_level_requirement(obj_ptr obj) {
 
     if (level <= 10) {
         // 0-10级区间：线性增长0→1级
-        base_level = 1.0;
+        base_level = level;
     } else if(level <= 50) {
         // 10-50级区间：线性增长1→39级
         base_level = 1 + (level - 10) * 38 / 40;
