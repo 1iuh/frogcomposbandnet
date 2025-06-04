@@ -497,13 +497,10 @@ static bool _create(obj_ptr obj, int k_idx, int lvl, u32b mode)
 
 int calculate_obj_level_requirement(obj_ptr obj) {
 
-    int value = obj_value(obj);
-
-    int adjust = ((value / 200000) * 4 - 2) * 0.5;
     int level = obj->level;
     
-    if (level < 10) {
-        level = 10; // Ensure minimum level is 10
+    if (level < 0) {
+        level = 0; // Ensure minimum level is 10
     } else if (level > 100) {
         level = 100; // Ensure maximum level is 100
     }
@@ -519,8 +516,8 @@ int calculate_obj_level_requirement(obj_ptr obj) {
         // 50-100级区间：线性增长39→45级
         base_level = 39 + (level - 50) * 6 / 50;
     }
-    
-    return base_level + adjust;
+
+    return base_level;
 }
 
 /************************************************************************

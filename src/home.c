@@ -8,7 +8,15 @@ static inv_ptr _home = NULL;
 static inv_ptr _museum = NULL;
 
 
-
+int replacechar(char *str, char orig, char rep) {
+    char *ix = str;
+    int n = 0;
+    while((ix = strchr(ix, orig)) != NULL) {
+        *ix++ = rep;
+        n++;
+    }
+    return n;
+}
 
 /* Function to convert a hex string representation back to an object
    This is useful for debugging or object deserialization */
@@ -236,7 +244,7 @@ bool _fetch_museum_data(_ui_context_ptr context)
     _museum = inv_alloc("Museum", INV_MUSEUM, 0);
     //  make http post request
     http_response_t response;
-    bool success = make_http_request("http://120.78.193.74/frogcomposbandnet/share_room/list", NULL, &response);
+    bool success = make_http_request("http://120.78.193.74/frogcomposbandnet/share_room/list/v2", NULL, &response);
     if (success && response.data)
     {
         jsmn_parser parser;
@@ -245,46 +253,39 @@ bool _fetch_museum_data(_ui_context_ptr context)
 
         jsmn_init(&parser);
         token_count = jsmn_parse(&parser, response.data, response.size, tokens, sizeof(tokens)/sizeof(tokens[0]));
-
         
         // json example:
-        // [{"hex": "000102030405060708090A0B0C0D0E0F", "number": 1}, {"hex": "101112131415161718191A1B1C1D1E1F", "number": 2}]
-        // where each object has a "hex" field with a hex string and a "number" field
+        // ["000102030405060708090A0B0C0D0E0F|1|", "000102030405060708090A0B0C0D0E0F|2|addd"]
         if (token_count > 0)
         {
             for(int i = 0; i < token_count; i++)
             {
-                if (tokens[i].type != JSMN_OBJECT) continue;
+                if (tokens[i].type != JSMN_STRING) continue;
 
                 // Find "hex" and "number" fields
-                char hex_buf[2048];
+                char *token_str = malloc(tokens[i].end - tokens[i].start + 1);
+                char *hex_buf;
+                char *number_buf;
                 int number = 0;
-                for (;;) {
-                    i++;
-                    if (i >= token_count) break; // Prevent out of bounds
-                    if (tokens[i].type == JSMN_STRING && tokens[i].size == 1) {
-                        // Check for "hex" field
-                        if (strncmp(response.data + tokens[i].start, "hex", tokens[i].end - tokens[i].start) == 0) {
-                            i++; // Move to the value
-                            strncpy(hex_buf, response.data + tokens[i].start, tokens[i].end - tokens[i].start);
-                            hex_buf[tokens[i].end - tokens[i].start] = '\0';
-                        }
-                        // Check for "number" field
-                        else if (strncmp(response.data + tokens[i].start, "number", tokens[i].end - tokens[i].start) == 0) {
-                            i++; // Move to the value
-                            number = atoi(response.data + tokens[i].start);
-                        }
-                    }
-                    if (i >= token_count || tokens[i].type != JSMN_STRING) break; // Exit loop if not a string
-                }
+                strncpy(token_str, response.data + tokens[i].start, tokens[i].end - tokens[i].start);
+                char* rest = token_str;
+                // split the string by '|' 
+                hex_buf = strtok_r(rest, "|", &rest);
+                number_buf = strtok_r(rest, "|", &rest);
 
+                number = atoi(number_buf);
                 if (hex_buf)
                 {
                     obj_ptr obj = obj_alloc();
                     if (hex_to_obj(hex_buf, obj))
                     {
+                        if (obj->art_name) {
+                            char *art_name_buf;
+                            art_name_buf = strtok_r(rest, "|", &rest);
+                            obj->art_name = quark_add(art_name_buf);
+                        } 
+
                         obj->number = number;
-                        if (obj->art_name) obj->art_name = 1;
                         museum_carry(obj);
                     }
                 }
@@ -302,16 +303,28 @@ bool _sync_drop(_ui_context_ptr context, obj_ptr obj) {
     http_response_t response;
     char post_data[1024];
     char name[MAX_NLEN];
+
+    if(obj->level == 0) {
+        obj->level = rand_range(10, 99);
+    }
+
     object_desc(name, obj, OD_OMIT_INSCRIPTION);
+    replacechar(name, '"', '\''); // Replace double quotes with single quotes for JSON compatibility
 
     char hex_buf[2048]; /* Should be more than enough for an obj_t */
     obj_dump_hex(obj, hex_buf, sizeof(hex_buf));
     // set up the POST data
-    snprintf(post_data, sizeof(post_data), "{\"name\": \"%s\", \"hex\": \"%s\", \"k_idx\": %d, \"tval\": %d, \"sval\": %d, \"pval\": %d, \"name2\": %d, \"name3\": %d, \"number\": %d}",
-     name, hex_buf, obj->k_idx, obj->tval, obj->sval, obj->pval, obj->name2, obj->name3, obj->number);
+    char art_name[256] = "0"; /* Should be more than enough for an obj_t */
+    if (obj->art_name) {
+        strncpy(art_name, quark_str(obj->art_name), sizeof(art_name) - 1);
+        art_name[sizeof(art_name) - 1] = '\0';
+    }
+
+    snprintf(post_data, sizeof(post_data), "{\"name\": \"%s\", \"hex\": \"%s\", \"k_idx\": %d, \"tval\": %d, \"sval\": %d, \"pval\": %d, \"name2\": %d, \"name3\": %d, \"number\": %d, \"hit\": %d, \"damage\": %d, \"ac\": %d, \"art_name\": \"%s\"}",
+     name, hex_buf, obj->k_idx, obj->tval, obj->sval, obj->pval, obj->name2, obj->name3, obj->number, obj->to_h, obj->to_d, obj->to_a, art_name);
 
     //  make http post request
-    bool success = make_http_post("http://120.78.193.74/frogcomposbandnet/share_room/drop", post_data, &response);
+    bool success = make_http_post("http://120.78.193.74/frogcomposbandnet/share_room/drop/v2", post_data, &response);
     free(response.data);
     return success;
 }
@@ -325,11 +338,16 @@ bool _sync_get(obj_ptr obj) {
     char hex_buf[2048]; /* Should be more than enough for an obj_t */
     obj_dump_hex(obj, hex_buf, sizeof(hex_buf));
     // set up the POST data
-    snprintf(post_data, sizeof(post_data), "{\"k_idx\": %d, \"tval\": %d, \"sval\": %d, \"pval\": %d, \"name2\": %d, \"name3\": %d, \"number\": %d}",
-     obj->k_idx, obj->tval, obj->sval, obj->pval, obj->name2, obj->name3, obj->number);
+    char art_name[256] = "0"; /* Should be more than enough for an obj_t */
+    if (obj->art_name) {
+        strncpy(art_name, quark_str(obj->art_name), sizeof(art_name) - 1);
+        art_name[sizeof(art_name) - 1] = '\0';
+    }
+    snprintf(post_data, sizeof(post_data), "{\"k_idx\": %d, \"tval\": %d, \"sval\": %d, \"pval\": %d, \"name2\": %d, \"name3\": %d, \"number\": %d, \"hit\": %d, \"damage\": %d, \"ac\": %d, \"art_name\": \"%s\"}",
+     obj->k_idx, obj->tval, obj->sval, obj->pval, obj->name2, obj->name3, obj->number, obj->to_h, obj->to_d, obj->to_a, art_name);
 
     //  make http post request
-    bool success = make_http_post("http://120.78.193.74/frogcomposbandnet/share_room/get", post_data, &response);
+    bool success = make_http_post("http://120.78.193.74/frogcomposbandnet/share_room/get/v2", post_data, &response);
     free(response.data);
     return success;
 }
@@ -494,15 +512,22 @@ static void _display(_ui_context_ptr context)
         doc_insert(doc,
             "<color:keypress>g</color> to get an item. "
             "<color:keypress>d</color> to drop an item. ");
+
+        doc_insert(doc,
+            "<color:keypress>x</color> to begin examining items.\n"
+            "<color:keypress>r</color> to begin removing (destroying) items.\n"
+            "<color:keypress>Esc</color> to exit. "
+            "<color:keypress>?</color> for help.");
+        }
+    else {
+        doc_insert(doc, "<color:keypress>d</color> to donate an item. "
+                        "<color:keypress>g</color> to get an item. ");
+        doc_insert(doc,
+            "<color:keypress>x</color> to begin examining items.\n"
+            "<color:keypress>Esc</color> to exit. "
+            "<color:keypress>?</color> for help.");
     }
-    else
-        doc_insert(doc, "<color:keypress>d</color> to donate an item. ");
-    
-    doc_insert(doc,
-        "<color:keypress>x</color> to begin examining items.\n"
-        "<color:keypress>r</color> to begin removing (destroying) items.\n"
-        "<color:keypress>Esc</color> to exit. "
-        "<color:keypress>?</color> for help.");
+
     doc_insert(doc, "</style>");
 
     Term_clear_rect(r);
@@ -730,6 +755,12 @@ static void _examine(_ui_context_ptr context)
 
 static void _remove(_ui_context_ptr context)
 {
+    if (inv_loc(context->inv) == INV_MUSEUM)
+    {
+        msg_print("<color:R>You cannot remove items from the museum.</color>");
+        return;
+    }
+
     for (;;)
     {
         char    cmd;
