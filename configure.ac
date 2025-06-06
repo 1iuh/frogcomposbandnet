@@ -170,6 +170,7 @@ case "/$varpath" in
 esac
 
 
+
 AC_SUBST([configdir])
 AC_SUBST([libdatadir])
 AC_SUBST([vardatadir])
@@ -181,6 +182,19 @@ AC_DEFINE_UNQUOTED([DEFAULT_DATA_PATH], "${vardatadir}", [Path to the game's var
 
 NOINSTALL="$with_noinstall"; AC_SUBST(NOINSTALL)
 SETEGID="$with_setgid";      AC_SUBST(SETEGID)
+
+dnl libcurl checking
+AC_CHECK_LIB(curl, curl_easy_init, found_curl=yes, found_curl=no)
+if test "$found_curl" = "yes"; then
+    AC_DEFINE(USE_CURL, 1, [Define to 1 if using libcurl support and it's found.])
+    CURL_CFLAGS=""
+    CFLAGS="${CFLAGS} ${CURL_CFLAGS}"
+    CURL_LIBS="-lcurl -lws2_32 -lcrypt32 -lz" 
+    LIBS="${LIBS} ${CURL_LIBS}"
+    AC_DEFINE(NETWORK_ENABLED, 1, [Define to 1 to enable network features.])
+else
+    AC_MSG_WARN([libcurl not found. Network features will be disabled.])
+fi
 
 dnl Frontends
 AC_ARG_ENABLE(curses,
@@ -300,18 +314,6 @@ if test "$enable_sdl_mixer" = "yes"; then
     fi
 fi
 
-dnl libcurl checking
-AC_CHECK_LIB(curl, curl_easy_init, found_curl=yes, found_curl=no)
-if test "$found_curl" = "yes"; then
-    AC_DEFINE(USE_CURL, 1, [Define to 1 if using libcurl support and it's found.])
-    CURL_CFLAGS=`pkg-config --cflags libcurl`
-    CFLAGS="${CFLAGS} ${CURL_CFLAGS}"
-    CURL_LIBS=`pkg-config --libs libcurl`
-    LIBS="${LIBS} ${CURL_LIBS}"
-    AC_DEFINE(NETWORK_ENABLED, 1, [Define to 1 to enable network features.])
-else
-    AC_MSG_WARN([libcurl not found. Network features will be disabled.])
-fi
 
 
 LIBS="${LIBS} -lm"
