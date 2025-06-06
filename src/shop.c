@@ -2397,7 +2397,7 @@ static void _display_inv(doc_ptr doc, shop_ptr shop, slot_t top, int page_size)
     char    name[MAX_NLEN];
     inv_ptr inv = shop->inv;
     bool    show_prices = inv_loc(inv) == INV_SHOP;
-    bool    show_values = (inv_loc(inv) != INV_SHOP || p_ptr-> wizard) && !inv_loc(inv) == INV_MUSEUM;
+    bool    show_values = (inv_loc(inv) != INV_SHOP || p_ptr-> wizard) && !(inv_loc(inv) == INV_MUSEUM);
     bool    show_level = inv_loc(inv) == INV_MUSEUM;
 
     if (show_weights)
