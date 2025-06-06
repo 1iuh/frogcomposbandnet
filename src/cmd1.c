@@ -6432,13 +6432,18 @@ static bool travel_abort(void)
     }
 
     /* check_monster */
+
     if (travel.mode == TRAVEL_MODE_AUTOEXPLORE) {
+        bool los;
         for (i = 0; i < max_m_idx; i++)
         {
             monster_type *m_ptr = &m_list[i];
             // msg_print('msg check');
 
             if (m_ptr->ml){
+                los = projectable(py, px, m_ptr->fy, m_ptr->fx);
+                if (!los) continue; /* Not in line of sight */
+
                 char m_name[80];
                 monster_desc(m_name, m_ptr, 0);
                 msg_format("You see a %s here.\n", m_name);
