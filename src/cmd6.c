@@ -1151,7 +1151,7 @@ void do_cmd_use_staff(void)
 
     prompt.prompt = "Use which staff?";
     prompt.error = "You have no staff to use.";
-    prompt.filter = obj_is_staff;
+    prompt.filter = obj_is_device;
     prompt.where[0] = INV_PACK;
     prompt.where[1] = INV_FLOOR;
     prompt.flags = INV_SHOW_FAIL_RATES;
@@ -1178,7 +1178,7 @@ void do_cmd_aim_wand(void)
 
     prompt.prompt = "Aim which wand?";
     prompt.error = "You have no wand to aim.";
-    prompt.filter = obj_is_wand;
+    prompt.filter = obj_is_device;
     prompt.where[0] = INV_PACK;
     prompt.where[1] = INV_FLOOR;
     prompt.flags = INV_SHOW_FAIL_RATES;
@@ -1204,7 +1204,7 @@ void do_cmd_zap_rod(void)
 
     prompt.prompt = "Zap which rod?";
     prompt.error = "You have no rod to zap.";
-    prompt.filter = obj_is_rod;
+    prompt.filter = obj_is_device;
     prompt.where[0] = INV_PACK;
     prompt.where[1] = INV_FLOOR;
     prompt.flags = INV_SHOW_FAIL_RATES;

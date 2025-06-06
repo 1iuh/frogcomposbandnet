@@ -4025,8 +4025,12 @@ static void _dispatch_command(int old_now_turn)
 
         /*** Use various objects ***/
 
-        /* Inscribe an object */
         case 'Z':
+        {
+            do_cmd_auto_explore();
+            break;
+        }
+        /* Inscribe an object */
         case '{':
         {
             obj_inscribe_ui();
@@ -4395,7 +4399,6 @@ static void _dispatch_command(int old_now_turn)
             do_cmd_save_and_exit();
             break;
         }
-
         /* Quit (commit suicide) */
         case 'Q':
         {
@@ -4628,7 +4631,7 @@ static void process_player(void)
             msg_print(NULL);
             if (r_idx && one_in_(2))
             {
-                int y, x;
+                    int y, x;
                 y = py+ddy[tsuri_dir];
                 x = px+ddx[tsuri_dir];
                 if (place_monster_aux(0, y, x, r_idx, PM_NO_KAGE))

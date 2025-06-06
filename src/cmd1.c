@@ -6421,9 +6421,30 @@ static bool travel_abort(void)
 			monster_type *m_ptr = &m_list[c_ptr->m_idx];
 
 			/* Visible monster */
-			if (m_ptr->ml)
+			if (m_ptr->ml) {
+                char m_name[80];
+                monster_desc(m_name, m_ptr, 0);
+                msg_format("You see a %s here.\n", m_name);
 				return TRUE;
+            }
 		}
+
+    }
+
+    /* check_monster */
+    if (travel.mode == TRAVEL_MODE_AUTOEXPLORE) {
+        for (i = 0; i < max_m_idx; i++)
+        {
+            monster_type *m_ptr = &m_list[i];
+            // msg_print('msg check');
+
+            if (m_ptr->ml){
+                char m_name[80];
+                monster_desc(m_name, m_ptr, 0);
+                msg_format("You see a %s here.\n", m_name);
+                return TRUE; /* Visible monster */
+            }
+        }
     }
 
     return FALSE;
@@ -6452,6 +6473,9 @@ void travel_step(void)
     {
         if (travel.run == 255)
             msg_print("No route is found!");
+        else
+            msg_print("travel is aborted.");
+
         disturb(0, 0);
         return;
     }
@@ -6473,6 +6497,7 @@ void travel_step(void)
     /* Travelling is bumping into jammed doors and getting stuck */
     if (is_jammed_door(cave[pt_best.y][pt_best.x].feat))
     {
+        // msg_print("is_jammed_door.");
         disturb(0, 0);
         return;
     }
@@ -6483,6 +6508,7 @@ void travel_step(void)
         door_hack = TRUE;
         if (!easy_open)
         {
+            // msg_print("is_closed_door");
             disturb(0, 0);
             return;
         }
@@ -6490,6 +6516,7 @@ void travel_step(void)
     /* Travelling is bumping into mountains and permanent walls and getting stuck */
     else if (!player_can_enter(cave[pt_best.y][pt_best.x].feat, 0))
     {
+        // msg_print("!player_can_enter");
         disturb(0, 0);
         return;
     }

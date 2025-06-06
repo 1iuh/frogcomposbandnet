@@ -483,6 +483,16 @@ bool object_is_artifact(object_type *o_ptr)
     return FALSE;
 }
 
+/*
+ * Check if an object is artifact
+ */
+bool object_is_true_artifact(object_type *o_ptr)
+{
+    if (object_is_fixed_artifact(o_ptr)) return TRUE;
+
+    return FALSE;
+}
+
 bool object_is_dragon_armor(object_type *o_ptr)
 {
     /* TODO: Better name? This is all the dragon armor that gets bonus resistances

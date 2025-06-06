@@ -159,10 +159,6 @@ C:1:S
 A:S
 C:1:#
 
-# Use a staff (Zap)
-A:u
-C:1:Z
-
 # Take off equipment
 A:t
 C:1:T

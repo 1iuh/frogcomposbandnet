@@ -2495,6 +2495,51 @@ static bool _travel_next_obj(int mode)
     travel_begin(mode, o_list[best_idx].loc.x, o_list[best_idx].loc.y);
     return TRUE;
 }
+
+bool try_travel(int target_x, int target_y)
+{
+    for (int x = -1; x < 2; x++) {
+        for (int y = -1; y < 2; y++) {
+            if (in_bounds2(target_y + y, target_x + x)) {
+                if (!(cave[y+target_y][x+target_x].info & CAVE_MARK)) {
+                    travel_begin(TRAVEL_MODE_AUTOEXPLORE, target_x, target_y);
+                    return TRUE;
+                }
+            }
+        }
+    }
+    return FALSE;
+}
+
+bool _travel_continue(void)
+{
+    for (int x = 0; x < cur_wid; x++) {
+        for (int y = 0; y < cur_hgt; y++) {
+            if (cave[y][x].info & CAVE_MARK && can_travel(x, y)) {
+                if(try_travel(x, y)) {
+                    return TRUE;
+                }
+            } 
+        }
+    }
+    return FALSE;
+}
+
+
+void do_cmd_auto_explore(void)
+{
+    for (int x = 0; x < cur_wid; x++) {
+        for (int y = 0; y < cur_hgt; y++) {
+            if (cave[y][x].info & CAVE_MARK && can_travel(x, y)) {
+                if(try_travel(x, y)) {
+                    return;
+                }
+            } 
+        }
+    }
+    msg_print("Explore Done!");
+}
+
 void do_cmd_get(void)
 {
     if (!cave[py][px].o_idx)
@@ -3896,6 +3941,28 @@ static void travel_flow(int ty, int tx)
     /* Forget the flow info */
     flow_head = flow_tail = 0;
 }
+bool can_travel(int x, int y)
+{
+    feature_type *f_ptr;
+
+    assert(in_bounds2(y, x)); /* Old bug with traveling in a scrollable wilderness */
+
+    if (x == px && y == py)
+    {
+        return FALSE;
+    }
+
+    f_ptr = &f_info[cave[y][x].feat];
+
+    if ((cave[y][x].info & CAVE_MARK) &&
+        (have_flag(f_ptr->flags, FF_WALL) ||
+            have_flag(f_ptr->flags, FF_CAN_DIG) ||
+            (have_flag(f_ptr->flags, FF_DOOR) && cave[y][x].mimic)))
+    {
+        return FALSE;
+    }
+    return TRUE;
+}
 
 void travel_begin(int mode, int x, int y)
 {
@@ -4024,7 +4091,10 @@ void travel_cancel_fully(void)
 void travel_end(void)
 {
     travel.run = 0;
-    if ((travel.mode != TRAVEL_MODE_NORMAL) && (!p_ptr->confused) && (!p_ptr->move_random) && (_travel_next_obj(travel.mode)))
+    if ((travel.mode == TRAVEL_MODE_AUTOEXPLORE) && (!p_ptr->confused) && (!p_ptr->move_random) && (_travel_continue())) {
+        if (travel.x == px && travel.y == py)
+            travel_cancel();
+    } else if ((travel.mode != TRAVEL_MODE_NORMAL) && (!p_ptr->confused) && (!p_ptr->move_random) && (_travel_next_obj(travel.mode)))
     {
         /* paranoia ... but don't get stuck */
         if (travel.x == px && travel.y == py)

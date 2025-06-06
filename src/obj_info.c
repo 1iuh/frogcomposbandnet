@@ -1523,6 +1523,13 @@ void obj_display_doc(object_type *o_ptr, doc_ptr doc)
                     doc_printf(doc, "This object is an artifact, a unique object whose powers you must either learn by direct experience or by *identifying* or selling this object.\n");
                 else
                     doc_printf(doc, "This object may have additional powers which you may learn either by experience or by *identifying* or selling this object.\n");
+            } else {
+                if (object_is_artifact(o_ptr)) {
+                    if (object_is_true_artifact(o_ptr))
+                        doc_printf(doc, "This object is a true artifact.\n");
+                    else
+                        doc_printf(doc, "This object is a random artifact.\n");
+                }
             }
         }
         else

@@ -25518,7 +25518,7 @@ D:An ancient, mighty leader of the dokkaebis, its sheer size indicates a
 D:status its lesser kin can but hope to mimic. It sees you and your
 D:adventures as a form of entertainment.
 
-N:1394:C.Blue
+N:1395:C.Blue
 G:H:B
 I:130:99d99:100:150:100:1000
 W:93:3:999:100000:0:0

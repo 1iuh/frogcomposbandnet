@@ -1866,6 +1866,7 @@ typedef struct
 #define TRAVEL_MODE_NORMAL   0
 #define TRAVEL_MODE_AMMO     1
 #define TRAVEL_MODE_AUTOPICK 2
+#define TRAVEL_MODE_AUTOEXPLORE 3
 typedef struct {
     int run;
     int cost[MAX_HGT][MAX_WID];
