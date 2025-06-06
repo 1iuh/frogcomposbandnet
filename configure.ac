@@ -221,6 +221,32 @@ AC_ARG_ENABLE(xtra_colours,
     [enable_xtra_colours=yes])
 
 
+dnl libcurl checking
+AC_CHECK_LIB(curl, curl_easy_init, found_curl=yes, found_curl=no)
+if test "$found_curl" = "yes"; then
+    AC_DEFINE(USE_CURL, 1, [Define to 1 if using libcurl support and it's found.])
+    AC_DEFINE(NETWORK_ENABLED, 1, [Define to 1 to enable network features.])
+    case $host_os in
+        *mingw* | *msys* | *cygwin*)
+            dnl Windows-specific curl configuration
+            CURL_CFLAGS=""
+            CURL_LIBS="-lcurl -lws2_32 -lcrypt32 -lz"
+            ;;
+        *)
+            dnl Linux/Unix curl configuration using pkg-config
+            CURL_CFLAGS=`pkg-config --cflags libcurl`
+            CURL_LIBS=`pkg-config --libs libcurl`
+            ;;
+    esac
+    
+    CFLAGS="${CFLAGS} ${CURL_CFLAGS}"
+    LIBS="${LIBS} ${CURL_LIBS}"
+
+else
+    AC_MSG_WARN([libcurl not found. Network features will be disabled.])
+fi
+
+
 MAINFILES="\$(BASEMAINFILES)"
 
 dnl curses checking
@@ -299,20 +325,6 @@ if test "$enable_sdl_mixer" = "yes"; then
         MAINFILES="${MAINFILES} \$(SNDSDLFILES)"
     fi
 fi
-
-dnl libcurl checking
-AC_CHECK_LIB(curl, curl_easy_init, found_curl=yes, found_curl=no)
-if test "$found_curl" = "yes"; then
-    AC_DEFINE(USE_CURL, 1, [Define to 1 if using libcurl support and it's found.])
-    CURL_CFLAGS=`pkg-config --cflags libcurl`
-    CFLAGS="${CFLAGS} ${CURL_CFLAGS}"
-    CURL_LIBS=`pkg-config --libs libcurl`
-    LIBS="${LIBS} ${CURL_LIBS}"
-    AC_DEFINE(NETWORK_ENABLED, 1, [Define to 1 to enable network features.])
-else
-    AC_MSG_WARN([libcurl not found. Network features will be disabled.])
-fi
-
 
 LIBS="${LIBS} -lm"
 
