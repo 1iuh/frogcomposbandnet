@@ -25518,6 +25518,29 @@ D:An ancient, mighty leader of the dokkaebis, its sheer size indicates a
 D:status its lesser kin can but hope to mimic. It sees you and your
 D:adventures as a form of entertainment.
 
+N:1394:C.Blue
+G:H:B
+I:130:99d99:100:150:100:1000
+W:93:3:999:100000:0:0
+B:CRUSH:HURT(35d5)
+B:CRAWL:HURT(20d5):EAT_ITEM
+B:CRUSH:HURT(35d5)
+B:CRAWL:HURT(20d5):EAT_ITEM
+F:UNIQUE | ELDRITCH_HORROR | RES_TELE | FORCE_SLEEP | DEMON |
+F:ATTR_MULTI | ESCORT | ATTR_ANY | NONLIVING |
+F:KILL_ITEM | KILL_WALL | CAN_SWIM | AURA_COLD |
+F:ONLY_ITEM | DROP_4D2 | DROP_GOOD | DROP_90 | RES_CHAO | RES_DISE |
+F:STUPID | OPEN_DOOR | BASH_DOOR | REGENERATE | EMPTY_MIND | RES_DISI |
+F:EVIL | RES_ACID | RES_POIS | RES_FIRE | NO_CONF | NO_SLEEP
+P:Copy:Zombie:Rage-Mage
+P:Body:Demonic Horror
+S:1_IN_5 | BA_WATER(1d186+50)
+S:S_HI_DEMON | BR_CHAOS | BR_DISENCHANT | BR_MANA | BR_DISINTEGRATE
+D:"In the heart of Tomenet’s wild world, a lone druid tends to
+D: the game’s ancient realms with unwavering devotion.
+D: For twenty years, he has woven magic into its fabric,
+D: keeping its challenges and mysteries alive."
+
 # N: serial number : monster name
 # G: symbol : color
 # I: speed : hit points : vision : armor class : alertness : weight (lbs)
