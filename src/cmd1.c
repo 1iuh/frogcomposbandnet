@@ -6438,15 +6438,11 @@ static bool travel_abort(void)
         for (i = 0; i < max_m_idx; i++)
         {
             monster_type *m_ptr = &m_list[i];
-            // msg_print('msg check');
-
-            if (m_ptr->ml){
-                los = projectable(py, px, m_ptr->fy, m_ptr->fx);
-                if (!los) continue; /* Not in line of sight */
-
+            c_ptr = &cave[m_ptr->fy][m_ptr->fx];
+            if (m_ptr->ml && (c_ptr->info & CAVE_VIEW) ){
                 char m_name[80];
                 monster_desc(m_name, m_ptr, 0);
-                msg_format("You see a %s here.\n", m_name);
+                msg_format("You see a %s here.", m_name);
                 return TRUE; /* Visible monster */
             }
         }
@@ -6477,10 +6473,15 @@ void travel_step(void)
     if (travel_abort())
     {
         if (travel.run == 255)
-            msg_print("No route is found!");
+            if (travel.mode == TRAVEL_MODE_AUTOEXPLORE)
+                msg_print("Auto Explore aborted.");
+            else
+                msg_print("No route is found!");
         else
-            msg_print("travel is aborted.");
-
+            if (travel.mode == TRAVEL_MODE_AUTOEXPLORE)
+                msg_print("Auto Explore aborted.");
+            else
+                msg_print("travel is aborted.");
         disturb(0, 0);
         return;
     }

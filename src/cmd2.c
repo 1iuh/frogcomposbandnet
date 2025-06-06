@@ -2516,6 +2516,7 @@ bool _travel_continue(void)
     int min_dist = cur_hgt * cur_wid;
     int tx = -1;
     int ty = -1;
+    update_stuff();
 
     for (int x = 0; x < cur_wid; x++) {
         for (int y = 0; y < cur_hgt; y++) {
@@ -4100,11 +4101,13 @@ void travel_end(void)
     if ((travel.mode == TRAVEL_MODE_AUTOEXPLORE) && (!p_ptr->confused) && (!p_ptr->move_random) && (_travel_continue())) {
         if (travel.x == px && travel.y == py)
             travel_cancel();
-    } else if ((travel.mode != TRAVEL_MODE_NORMAL) && (!p_ptr->confused) && (!p_ptr->move_random) && (_travel_next_obj(travel.mode)))
+    } else if ((travel.mode != TRAVEL_MODE_NORMAL) && (travel.mode != TRAVEL_MODE_AUTOEXPLORE) && (!p_ptr->confused) && (!p_ptr->move_random))
     {
-        /* paranoia ... but don't get stuck */
-        if (travel.x == px && travel.y == py)
-            travel_cancel();
+        if (_travel_next_obj(travel.mode)) {
+            /* paranoia ... but don't get stuck */
+            if (travel.x == px && travel.y == py)
+                travel_cancel();
+        }
     }
     else
     {
