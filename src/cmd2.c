@@ -11,6 +11,7 @@
 /* Purpose: Movement commands (part 2) */
 
 #include "angband.h"
+#include "rect.h"
 
 #include <assert.h>
 
@@ -2496,13 +2497,12 @@ static bool _travel_next_obj(int mode)
     return TRUE;
 }
 
-bool try_travel(int target_x, int target_y)
+bool has_unmarked_floor(int target_x, int target_y)
 {
     for (int x = -1; x < 2; x++) {
         for (int y = -1; y < 2; y++) {
             if (in_bounds2(target_y + y, target_x + x)) {
                 if (!(cave[y+target_y][x+target_x].info & CAVE_MARK)) {
-                    travel_begin(TRAVEL_MODE_AUTOEXPLORE, target_x, target_y);
                     return TRUE;
                 }
             }
@@ -2513,14 +2513,27 @@ bool try_travel(int target_x, int target_y)
 
 bool _travel_continue(void)
 {
+    int min_dist = cur_hgt * cur_wid;
+    int tx = -1;
+    int ty = -1;
+
     for (int x = 0; x < cur_wid; x++) {
         for (int y = 0; y < cur_hgt; y++) {
             if (cave[y][x].info & CAVE_MARK && can_travel(x, y)) {
-                if(try_travel(x, y)) {
-                    return TRUE;
+                if(has_unmarked_floor(x, y)) {
+                    int dist = distance(py, px, y, x);
+                    if (dist < min_dist) {
+                        min_dist = dist;
+                        tx = x;
+                        ty = y;
+                    }
                 }
             } 
         }
+    }
+    if (tx != -1 && ty != -1) {
+        travel_begin(TRAVEL_MODE_AUTOEXPLORE, tx, ty);
+        return TRUE;
     }
     return FALSE;
 }
@@ -2528,16 +2541,9 @@ bool _travel_continue(void)
 
 void do_cmd_auto_explore(void)
 {
-    for (int x = 0; x < cur_wid; x++) {
-        for (int y = 0; y < cur_hgt; y++) {
-            if (cave[y][x].info & CAVE_MARK && can_travel(x, y)) {
-                if(try_travel(x, y)) {
-                    return;
-                }
-            } 
-        }
+    if (!_travel_continue()) {
+        msg_print("Explore Done!");
     }
-    msg_print("Explore Done!");
 }
 
 void do_cmd_get(void)
