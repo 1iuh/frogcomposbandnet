@@ -18,6 +18,11 @@
 #define AF_BIGTILE2 0xf0
 #define AF_TILE1   0x80
 
+#ifdef WINDOWS
+#define ALWAYS_ERASE
+#endif
+
+
 /*
  * This file provides a generic, efficient, terminal window package,
  * which can be used not only on standard terminal environments such
@@ -1280,8 +1285,11 @@ errr Term_fresh(void)
 
 
     /* Handle "total erase" */
-    // if (Term->total_erase)
+#ifdef ALWAYS_ERASE 
     if (TRUE) // workaround for ghosting
+#else
+    if (Term->total_erase)
+#endif
     {
         byte na = Term->attr_blank;
         char nc = Term->char_blank;
