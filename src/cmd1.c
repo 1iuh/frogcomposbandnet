@@ -6439,10 +6439,10 @@ static bool travel_abort(void)
         {
             monster_type *m_ptr = &m_list[i];
             c_ptr = &cave[m_ptr->fy][m_ptr->fx];
-            if (m_ptr->ml && (c_ptr->info & CAVE_VIEW) ){
+            if (m_ptr->ml && (c_ptr->info & CAVE_VIEW) && is_hostile(m_ptr)){
                 char m_name[80];
                 monster_desc(m_name, m_ptr, 0);
-                msg_format("You see a %s here.", m_name);
+                msg_format("You see %s here.", m_name);
                 return TRUE; /* Visible monster */
             }
         }
