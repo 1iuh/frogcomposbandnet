@@ -18,11 +18,6 @@
 #define AF_BIGTILE2 0xf0
 #define AF_TILE1   0x80
 
-#ifdef WINDOWS
-#define ALWAYS_ERASE
-#endif
-
-
 /*
  * This file provides a generic, efficient, terminal window package,
  * which can be used not only on standard terminal environments such
@@ -831,6 +826,8 @@ static void Term_fresh_row_pict(int y, int x1, int x2)
  */
 static void Term_fresh_row_both(int y, int x1, int x2)
 {
+    int x;
+
     byte *old_aa = Term->old->a[y];
     char *old_cc = Term->old->c[y];
 
@@ -856,9 +853,6 @@ static void Term_fresh_row_both(int y, int x1, int x2)
     /* Pending start */
     int fx = 0;
 
-    /* Pending position*/
-    int fpos = 0;
-
     /* Pending attr */
     byte fa = Term->attr_blank;
 
@@ -869,7 +863,7 @@ static void Term_fresh_row_both(int y, int x1, int x2)
     char nc;
 
     /* Scan "modified" columns */
-    for (int x = x1, pos = x1; x <= x2; x++)
+    for (x = x1; x <= x2; x++)
     {
         /* See what is currently here */
         oa = old_aa[x];
@@ -886,72 +880,29 @@ static void Term_fresh_row_both(int y, int x1, int x2)
         nta = scr_taa[x];
         ntc = scr_tcc[x];
 
-        bool unchanged = FALSE, skip = FALSE, flush = FALSE;
-        int offset = 0;
-
-        if (nc & 0x80) {
-            // non ascii assume utf-8
-            if (nc & 0x40) {
-                // starting byte
-                offset = 2; // hacky: treat all non ascii as double width
-            }
-            else {
-                //continuation byte
-            }
-        }
-        else
-        {
-            // ascii
-            offset = 1;
-        }
-
         /* Handle unchanged grids */
         if ((na == oa) && (nc == oc) && (nta == ota) && (ntc == otc))
         {
-            unchanged = flush = TRUE;
-        }
-
-        /* 2nd byte of bigtile */
-        else if ((na & AF_BIGTILE2) == AF_BIGTILE2) {
-            skip = TRUE;
-        }
-
-        // dunno how to distinguish between bigtile and UTF-8
-        /* Handle high-bit attr/chars */
-        else if ((na & AF_TILE1) && (nc & 0x80))
-        {
-            skip = flush = TRUE;
-
-            /* Hack -- Draw the special attr/char pair */
-            (void)((*Term->pict_hook)(x, y, 1, &na, &nc, &nta, &ntc));
-            // wondering if this should run after flush
-        }
-
-        /* Notice new color */
-        else if (fa != na)
-        {
-            flush = TRUE;
-        }
-
-        if (flush && fn) {
-            /* Draw the pending chars */
-            if (fa || always_text)
+            /* Flush */
+            if (fn)
             {
-                (void)((*Term->text_hook)(fpos, y, fn, fa, &scr_cc[fx]));
+                /* Draw pending chars (normal) */
+                if (fa || always_text)
+                {
+                    (void)((*Term->text_hook)(fx, y, fn, fa, &scr_cc[fx]));
+                }
+
+                /* Draw pending chars (black) */
+                else
+                {
+                    (void)((*Term->wipe_hook)(fx, y, fn));
+                }
+
+                /* Forget */
+                fn = 0;
             }
 
-            /* Hack -- Erase "leading" spaces */
-            else
-            {
-                (void)((*Term->wipe_hook)(fpos, y, fn));
-            }
-
-            /* Forget */
-            fn = 0;
-        }
-
-        if (unchanged) {
-            pos += offset;
+            /* Skip */
             continue;
         }
 
@@ -962,26 +913,68 @@ static void Term_fresh_row_both(int y, int x1, int x2)
         old_taa[x] = nta;
         old_tcc[x] = ntc;
 
-        if (skip) {
-            pos += offset;
+        /* 2nd byte of bigtile */
+        if ((na & AF_BIGTILE2) == AF_BIGTILE2) continue;
+
+        /* Handle high-bit attr/chars */
+        if ((na & AF_TILE1) && (nc & 0x80))
+        {
+            /* Flush */
+            if (fn)
+            {
+                /* Draw pending chars (normal) */
+                if (fa || always_text)
+                {
+                    (void)((*Term->text_hook)(fx, y, fn, fa, &scr_cc[fx]));
+                }
+
+                /* Draw pending chars (black) */
+                else
+                {
+                    (void)((*Term->wipe_hook)(fx, y, fn));
+                }
+
+                /* Forget */
+                fn = 0;
+            }
+
+            /* Hack -- Draw the special attr/char pair */
+            (void)((*Term->pict_hook)(x, y, 1, &na, &nc, &nta, &ntc));
+
+            /* Skip */
             continue;
         }
 
+        /* Notice new color */
         if (fa != na)
+
         {
+            /* Flush */
+            if (fn)
+            {
+                /* Draw the pending chars */
+                if (fa || always_text)
+                {
+                    (void)((*Term->text_hook)(fx, y, fn, fa, &scr_cc[fx]));
+                }
+
+                /* Hack -- Erase "leading" spaces */
+                else
+                {
+                    (void)((*Term->wipe_hook)(fx, y, fn));
+                }
+
+                /* Forget */
+                fn = 0;
+            }
+
             /* Save the new color */
             fa = na;
+
         }
 
-        /* Restart */
-        if (fn == 0) {
-            fx = x;
-            fpos = pos;
-        }
-
-        /* Advance */
-        fn++;
-        pos += offset;
+        /* Restart and Advance */
+        if (fn++ == 0) fx = x;
     }
 
     /* Flush */
@@ -990,13 +983,13 @@ static void Term_fresh_row_both(int y, int x1, int x2)
         /* Draw pending chars (normal) */
         if (fa || always_text)
         {
-            (void)((*Term->text_hook)(fpos, y, fn, fa, &scr_cc[fx]));
+            (void)((*Term->text_hook)(fx, y, fn, fa, &scr_cc[fx]));
         }
 
         /* Draw pending chars (black) */
         else
         {
-            (void)((*Term->wipe_hook)(fpos, y, fn));
+            (void)((*Term->wipe_hook)(fx, y, fn));
         }
     }
 }
@@ -1009,6 +1002,8 @@ static void Term_fresh_row_both(int y, int x1, int x2)
  */
 static void Term_fresh_row_text(int y, int x1, int x2)
 {
+    int x;
+
     byte *old_aa = Term->old->a[y];
     char *old_cc = Term->old->c[y];
 
@@ -1024,9 +1019,6 @@ static void Term_fresh_row_text(int y, int x1, int x2)
     /* Pending start */
     int fx = 0;
 
-    /* Pending position*/
-    int fpos = 0;
-
     /* Pending attr */
     byte fa = Term->attr_blank;
 
@@ -1037,7 +1029,7 @@ static void Term_fresh_row_text(int y, int x1, int x2)
     char nc;
 
     /* Scan "modified" columns */
-    for (int x = x1, pos = x1; x <= x2; x++)
+    for (x = x1; x <= x2; x++)
     {
         /* See what is currently here */
         oa = old_aa[x];
@@ -1047,56 +1039,30 @@ static void Term_fresh_row_text(int y, int x1, int x2)
         na = scr_aa[x];
         nc = scr_cc[x];
 
-        bool unchanged = FALSE, flush = FALSE;
-        int offset = 0;
-
-        if (nc & 0x80) {
-            // non ascii assume utf-8
-            if (nc & 0x40) {
-                // starting byte
-                offset = 2; // hacky: treat all non ascii as double width
-            }
-            else {
-                //continuation byte
-            }
-        }
-        else
-        {
-            // ascii
-            offset = 1;
-        }
-
         /* Handle unchanged grids */
         if ((na == oa) && (nc == oc))
-        {
-            unchanged = flush = TRUE;
-        }
 
-        /* Notice new color */
-        else if (fa != na)
         {
-            flush = TRUE;
-        }
-
-        if (flush && fn) {
-            /* Draw the pending chars */
-            if (fa || always_text)
+            /* Flush */
+            if (fn)
             {
-                (void)((*Term->text_hook)(fpos, y, fn, fa, &scr_cc[fx]));
+                /* Draw pending chars (normal) */
+                if (fa || always_text)
+                {
+                    (void)((*Term->text_hook)(fx, y, fn, fa, &scr_cc[fx]));
+                }
+
+                /* Draw pending chars (black) */
+                else
+                {
+                    (void)((*Term->wipe_hook)(fx, y, fn));
+                }
+
+                /* Forget */
+                fn = 0;
             }
 
-            /* Hack -- Erase "leading" spaces */
-            else
-            {
-                (void)((*Term->wipe_hook)(fpos, y, fn));
-            }
-
-            /* Forget */
-            fn = 0;
-        }
-        
-        if (unchanged) {
-            pos += offset;
+            /* Skip */
             continue;
         }
 
@@ -1104,35 +1070,51 @@ static void Term_fresh_row_text(int y, int x1, int x2)
         old_aa[x] = na;
         old_cc[x] = nc;
 
+        /* Notice new color */
         if (fa != na)
+
         {
+            /* Flush */
+            if (fn)
+            {
+                /* Draw the pending chars */
+                if (fa || always_text)
+                {
+                    (void)((*Term->text_hook)(fx, y, fn, fa, &scr_cc[fx]));
+                }
+
+                /* Hack -- Erase "leading" spaces */
+                else
+                {
+                    (void)((*Term->wipe_hook)(fx, y, fn));
+                }
+
+                /* Forget */
+                fn = 0;
+            }
+
             /* Save the new color */
             fa = na;
+
         }
 
-        /* Restart */
-        if (fn == 0) {
-            fx = x;
-            fpos = pos;
-        }
-
-        /* Advance */
-        fn++;
-        pos += offset;
+        /* Restart and Advance */
+        if (fn++ == 0) fx = x;
     }
+
     /* Flush */
     if (fn)
     {
         /* Draw pending chars (normal) */
         if (fa || always_text)
         {
-            (void)((*Term->text_hook)(fpos, y, fn, fa, &scr_cc[fx]));
+            (void)((*Term->text_hook)(fx, y, fn, fa, &scr_cc[fx]));
         }
 
         /* Draw pending chars (black) */
         else
         {
-            (void)((*Term->wipe_hook)(fpos, y, fn));
+            (void)((*Term->wipe_hook)(fx, y, fn));
         }
     }
 }
@@ -1285,11 +1267,7 @@ errr Term_fresh(void)
 
 
     /* Handle "total erase" */
-#ifdef ALWAYS_ERASE 
-    if (TRUE) // workaround for ghosting
-#else
     if (Term->total_erase)
-#endif
     {
         byte na = Term->attr_blank;
         char nc = Term->char_blank;
