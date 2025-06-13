@@ -956,6 +956,50 @@ void gear_ui(int which)
     string_free(s);
 }
 
+void bag_drop_ui(int which)
+{
+    if(equip_find_obj(TV_QUIVER, SV_ANY) == 0)
+    {
+        msg_print("You have no quiver or bag to drop items from.");
+        return;
+    }
+
+    obj_prompt_t prompt = {0};
+
+    if (p_ptr->special_defense & KATA_MUSOU)
+        set_action(ACTION_NONE);
+
+    if(equip_find_obj(TV_QUIVER, SV_QUIVER))
+        prompt.filter = obj_is_ammo;
+
+    prompt.prompt = "Drop which item?";
+    prompt.error = "You have nothing to drop.";
+    prompt.where[0] = INV_PACK;
+    obj_prompt_add_special_packs(&prompt);
+
+    obj_prompt(&prompt);
+    if (!prompt.obj) return;
+
+    energy_use = 50;
+
+    if(equip_find_obj(TV_QUIVER, SV_QUIVER))
+        quiver_carry(prompt.obj);
+    else
+        bag_carry(prompt.obj);
+    if (prompt.obj->number <= 0)
+    {
+        prompt.obj->marked |= OM_DELAYED_MSG;
+        obj_release(prompt.obj, OBJ_RELEASE_QUIET);
+    }
+    else
+    {
+        /* If the item was not dropped, we need to update the window */
+        p_ptr->notice |= PN_OPTIMIZE_PACK | PN_OPTIMIZE_QUIVER;
+        p_ptr->window |= PW_INVEN | PW_EQUIP;
+    }
+
+}
+
 static int _inscriber(obj_prompt_context_ptr context, int cmd)
 {
     obj_prompt_tab_ptr tab = vec_get(context->tabs, context->tab);

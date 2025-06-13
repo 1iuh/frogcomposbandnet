@@ -78,6 +78,7 @@ extern slot_t  inv_random_slot(inv_ptr inv, obj_p p); /* used for disenchantment
 extern int     inv_weight(inv_ptr inv, obj_p p); /* Pass NULL for total weight */
 extern int     inv_count(inv_ptr inv, obj_p p); /* Sum(obj->number) for all non-null objects p accepts */
 extern int     inv_count_slots(inv_ptr inv, obj_p p); /* Sum(1) for all (possibly null) objects p accepts */
+extern int     inv_used_slots(inv_ptr inv);
 extern int     inv_loc(inv_ptr inv);
 extern int     inv_max(inv_ptr inv);
 extern cptr    inv_name(inv_ptr inv);

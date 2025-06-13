@@ -1947,8 +1947,13 @@ void object_desc(char *buf, object_type *o_ptr, u32b mode)
         break;
     }
     case TV_QUIVER: /* show capacity */
-        if (o_ptr->loc.where == INV_EQUIP)
-            t = object_desc_str(t, format(" [%d of %d]", quiver_count(NULL), o_ptr->xtra4));
+
+        if (o_ptr->loc.where == INV_EQUIP) {
+            if (o_ptr->sval == SV_QUIVER)
+                t = object_desc_str(t, format(" [%d of %d]", quiver_count(NULL), o_ptr->xtra4));
+            else
+                t = object_desc_str(t, format(" [%d of %d]", quiver_used_slots(), o_ptr->xtra4));
+        }
         else
             t = object_desc_str(t, format(" [%d]", o_ptr->xtra4));
         break;

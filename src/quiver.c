@@ -7,7 +7,7 @@ static inv_ptr _inv = NULL;
 void quiver_init(void)
 {
    inv_free(_inv);
-   _inv = inv_alloc("Quiver", INV_QUIVER, QUIVER_MAX); 
+   _inv = inv_alloc("Back", INV_QUIVER, QUIVER_MAX); 
 }
 
 void quiver_display(doc_ptr doc, obj_p p, int flags)
@@ -46,6 +46,46 @@ int quiver_capacity(void)
     if (!slot) return 0;
     return equip_obj(slot)->xtra4;
 }
+
+int quiver_slots(void)
+{
+    slot_t slot = equip_find_obj(TV_QUIVER, SV_BAG);
+    if (!slot) return 0;
+    return equip_obj(slot)->xtra4;
+}
+
+void bag_carry(obj_ptr obj)
+{
+    int ct = quiver_count_slots(NULL);
+    int cap = quiver_slots();
+
+    if(!inv_can_combine(_inv, obj)) {
+        if(ct + 1 > cap) {
+            msg_print("You cannot carry any more items in your bag.");
+            return;
+        }
+    }
+
+    inv_combine_ex(_inv, obj);
+    if (obj->number && ct < cap)
+    {
+        slot_t slot = inv_add(_inv, obj);
+        if (slot)
+        {
+            obj_ptr new_obj = inv_obj(_inv, slot);
+            new_obj->marked |= OM_TOUCHED;
+            new_obj->marked &= ~OM_WORN;
+            autopick_alter_obj(new_obj, FALSE);
+            p_ptr->notice |= PN_OPTIMIZE_QUIVER;
+        }
+    }
+
+    p_ptr->update |= PU_BONUS; /* must check speed */
+    p_ptr->window |= PW_EQUIP; /* a Quiver [32 of 110] */
+    p_ptr->notice |= PN_CARRY;
+}
+
+
 
 void quiver_carry(obj_ptr obj)
 {
@@ -201,6 +241,7 @@ int quiver_weight(obj_p p)
     return inv_weight(_inv, p);
 }
 
+
 int quiver_count(obj_p p)
 {
     return inv_count(_inv, p);
@@ -209,6 +250,11 @@ int quiver_count(obj_p p)
 int quiver_count_slots(obj_p p)
 {
     return inv_count_slots(_inv, p);
+}
+
+int quiver_used_slots()
+{
+    return inv_used_slots(_inv);
 }
 
 /* Savefiles */

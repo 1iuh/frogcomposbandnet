@@ -9,6 +9,7 @@ extern void    pack_init(void);
 
 /* User Interface and Display */
 extern void    pack_ui(void);
+extern void    bag_ui(void);
 extern void    pack_display(doc_ptr doc, obj_p p, int flags);
 
 /* Adding and Removing Items */

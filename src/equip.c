@@ -576,6 +576,13 @@ static bool _wield_verify(obj_ptr obj)
             "only has a capacity for %d missiles.", quiver_count(NULL), obj->xtra4);
         return FALSE;
     }
+
+    if (quiver_count(NULL) >0 && obj->tval == TV_QUIVER && equip_find_obj(TV_QUIVER, SV_ANY) > 0 && equip_find_obj(TV_QUIVER, obj->sval) == 0)
+    {
+        msg_format("Failed! Clear your bag first before wielding a new type bag.");
+        return FALSE;
+    }
+
     return TRUE;
 }
 
@@ -772,9 +779,9 @@ void equip_takeoff_ui(void)
     obj_ptr obj = _unwield_get_obj();
 
     if (!obj) return;
-    if (obj->tval == TV_QUIVER && quiver_count(NULL))
+    if (obj->tval == TV_QUIVER && quiver_count(NULL) && obj->loc.where == INV_EQUIP)
     {
-        msg_print("Your quiver still holds ammo. Remove all the ammo from your quiver first.");
+        msg_print("Your bag still holds something. Remove all of them from your bag first.");
         return;
     }
     energy_use = 50;

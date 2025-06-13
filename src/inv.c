@@ -570,11 +570,28 @@ int inv_count_slots(inv_ptr inv, obj_p p)
 {
     int ct = 0;
     int slot;
+
     for (slot = 1; slot < vec_length(inv->objects); slot++)
     {
         obj_ptr obj = inv_obj(inv, slot);
-        if (_filter(obj, p))
+        if (_filter(obj, p)) {
             ct++;
+        }
+    }
+    return ct;
+}
+
+int inv_used_slots(inv_ptr inv)
+{
+    int ct = 0;
+    int slot;
+
+    for (slot = 1; slot < vec_length(inv->objects); slot++)
+    {
+        obj_ptr obj = inv_obj(inv, slot);
+        if (obj) {
+            ct++;
+        }
     }
     return ct;
 }

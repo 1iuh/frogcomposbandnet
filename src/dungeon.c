@@ -3611,7 +3611,6 @@ static void _dispatch_command(int old_now_turn)
             pack_ui();
             break;
         }
-
         case 'W':
         {
             ring_finger_swap_ui(0, 0);
@@ -3631,8 +3630,9 @@ static void _dispatch_command(int old_now_turn)
         /* Hack -- toggle windows */
         case KTRL('I'):
         {
-            toggle_inven_equip();
-            toggle_mon_obj_lists();
+            // toggle_inven_equip();
+            // toggle_mon_obj_lists();
+            bag_ui();
             break;
         }
 

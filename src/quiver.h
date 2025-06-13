@@ -17,6 +17,8 @@ extern void    quiver_display(doc_ptr doc, obj_p p, int flags);
 extern bool    quiver_likes(obj_ptr obj);
 extern bool    quiver_tolerates(obj_ptr obj);
 extern int     quiver_capacity(void);
+extern int     quiver_slots(void);
+extern void    bag_carry(obj_ptr obj);
 extern void    quiver_carry(obj_ptr obj); /* combines quiver, then carries pack, then overflows */
 extern void    quiver_remove(slot_t slot);
 extern void    quiver_remove_all(void); /* player lost quiver due to shapeshifting ... */
@@ -47,6 +49,7 @@ extern void    quiver_delayed_describe(void);
 extern int     quiver_weight(obj_p p);
 extern int     quiver_count(obj_p p);
 extern int     quiver_count_slots(obj_p p);
+extern int     quiver_used_slots(void);
 
 /* Savefiles */
 extern void    quiver_load(savefile_ptr file);

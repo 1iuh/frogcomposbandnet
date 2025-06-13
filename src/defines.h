@@ -2213,6 +2213,12 @@ enum {
 #define SV_BOOK_MIN_GOOD    2
 
 
+/* The "sval" codes for TV_QUIVER */
+#define SV_QUIVER         0
+
+#define SV_BAG        1
+
+
 #define OBJ_GOLD_LIST   650     /* First "gold" entry */
 #define MAX_GOLD        18      /* Number of "gold" entries */
 

@@ -31,6 +31,11 @@ void pack_ui(void)
     gear_ui(INV_PACK);
 }
 
+void bag_ui(void)
+{
+    bag_drop_ui(INV_PACK);
+}
+
 void pack_display(doc_ptr doc, obj_p p, int flags)
 {
     inv_display(_inv, 1, pack_max(), p, doc, flags);

@@ -3691,27 +3691,50 @@ void obj_create_armor(object_type *o_ptr, int level, int power, int mode)
 void obj_create_quiver(object_type *o_ptr, int level, int power, int mode)
 {
     /* capacity */
-    o_ptr->xtra4 = 60;
-    while (one_in_(2)) o_ptr->xtra4 += 10;
-
-    /* egos */
-    if (power > 1)
-    {
-        o_ptr->name2 = ego_choose_type(EGO_TYPE_QUIVER, level);
-
-        switch (o_ptr->name2)
+    if (o_ptr->sval == SV_BAG) {
+        o_ptr->xtra4 = (o_ptr->pval+1) * 4;
+        if (power > 1)
         {
-        case EGO_QUIVER_HOLDING:
-            o_ptr->xtra4 *= 2;
-            break;
-        case EGO_QUIVER_PHASE:
-            o_ptr->weight = 0;
-            break;
+            o_ptr->name2 = ego_choose_type(EGO_TYPE_QUIVER, level);
+
+            switch (o_ptr->name2)
+            {
+            case EGO_QUIVER_HOLDING:
+                o_ptr->xtra4 *= 2;
+                break;
+            case EGO_QUIVER_PHASE:
+                o_ptr->weight = 0;
+                break;
+            }
         }
-        o_ptr->xtra4 += 50;
+        else if (power == 1)
+            o_ptr->xtra4 += 2;
     }
-    else if (power == 1)
-        o_ptr->xtra4 += 20;
+    else
+    {
+        o_ptr->xtra4 = 60;
+        while (one_in_(2)) o_ptr->xtra4 += 10;
+        /* egos */
+        if (power > 1)
+        {
+            o_ptr->name2 = ego_choose_type(EGO_TYPE_QUIVER, level);
+
+            switch (o_ptr->name2)
+            {
+            case EGO_QUIVER_HOLDING:
+                o_ptr->xtra4 *= 2;
+                break;
+            case EGO_QUIVER_PHASE:
+                o_ptr->weight = 0;
+                break;
+            }
+            o_ptr->xtra4 += 50;
+        }
+        else if (power == 1)
+            o_ptr->xtra4 += 20;
+    }
+
+
 }
 
 /*************************************************************************
