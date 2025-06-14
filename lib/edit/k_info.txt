@@ -4617,6 +4617,7 @@ G:~:U
 I:46:1:0
 W:20:0:40:10:30
 A:20/4
+F:TOWN
 D:A small tied sack of coarse fabric.
 
 N:*:& Leather Pouch~
