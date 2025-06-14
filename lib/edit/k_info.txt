@@ -4616,7 +4616,7 @@ N:*:& Fabric Bag~
 G:~:U
 I:46:1:0
 W:20:0:40:10:30
-A:20/4
+A:20/3
 F:TOWN
 D:A small tied sack of coarse fabric.
 
@@ -4624,7 +4624,7 @@ N:*:& Leather Pouch~
 G:~:U
 I:46:1:1
 W:20:0:50:10:120
-A:50/6
+A:50/4
 D:A rugged pouch of worn leather, cinched with a cord clasp.
 
 
@@ -4632,5 +4632,5 @@ N:*:& Dwarven Backpack~
 G:~:U
 I:46:1:2
 W:50:0:0:10:500
-A:60/8
+A:70/5
 D:A rugged, iron-studded pouch forged from thick boarhide and banded with bronze straps.

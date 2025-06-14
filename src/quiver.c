@@ -56,7 +56,7 @@ int quiver_slots(void)
 
 void bag_carry(obj_ptr obj)
 {
-    int ct = quiver_count_slots(NULL);
+    int ct = quiver_used_slots();
     int cap = quiver_slots();
 
     if(!inv_can_combine(_inv, obj)) {
