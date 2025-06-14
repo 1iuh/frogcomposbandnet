@@ -536,6 +536,7 @@ static bool _general_will_buy(obj_ptr obj)
     case TV_SPIKE:
     case TV_SHOT:
     case TV_ARROW:
+    case TV_QUIVER:
     case TV_BOLT:
     case TV_DIGGING:
     case TV_CLOAK:
