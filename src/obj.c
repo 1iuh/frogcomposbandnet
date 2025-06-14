@@ -159,7 +159,10 @@ void obj_release(obj_ptr obj, int options)
         break;
     case INV_QUIVER:
         if (!quiet && !delayed)
-            msg_format("You have %s in your quiver.", name);
+            if(equip_find_obj(TV_QUIVER, SV_QUIVER))
+                msg_format("You have %s in your quiver.", name);
+            else
+                msg_format("You have %s in your bag.", name);
         if (obj->number <= 0)
             quiver_remove(obj->loc.slot);
         else if (delayed)

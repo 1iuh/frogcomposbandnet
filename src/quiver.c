@@ -85,10 +85,14 @@ void bag_carry(obj_ptr obj)
     p_ptr->notice |= PN_CARRY;
 }
 
-
-
 void quiver_carry(obj_ptr obj)
 {
+
+    if(equip_find_obj(TV_QUIVER, SV_BAG))
+    {
+        bag_carry(obj);
+        return;
+    }
     /* Helper for pack_carry and equip_wield */
     int ct = quiver_count(NULL);
     int cap = quiver_capacity();

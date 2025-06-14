@@ -147,10 +147,6 @@ C:1:^D
 A:L
 C:1:W
 
-# Browse a book (Peruse)
-A:b
-C:1:P
-
 # Jam a door (Spike)
 A:j
 C:1:S
