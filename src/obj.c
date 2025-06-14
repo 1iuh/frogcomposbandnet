@@ -975,8 +975,8 @@ void bag_drop_ui(int which)
     if(equip_find_obj(TV_QUIVER, SV_QUIVER))
         prompt.filter = obj_is_ammo;
 
-    prompt.prompt = "Drop which item?";
-    prompt.error = "You have nothing to drop.";
+    prompt.prompt = "Which item to put in the bag?";
+    prompt.error = "You have nothing to put.";
     prompt.where[0] = INV_PACK;
     obj_prompt_add_special_packs(&prompt);
 
