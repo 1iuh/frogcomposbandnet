@@ -3628,7 +3628,7 @@ static void _dispatch_command(int old_now_turn)
         }
 
         /* Hack -- toggle windows */
-        case KTRL('I'):
+        case KTRL('i'):
         {
             // toggle_inven_equip();
             // toggle_mon_obj_lists();
