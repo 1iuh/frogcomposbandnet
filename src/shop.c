@@ -607,6 +607,8 @@ static bool _general_create(obj_ptr obj, u32b mode)
         k_idx = lookup_kind(TV_SPIKE, SV_ANY);
     else if (one_in_(3))
         k_idx = lookup_kind(TV_DIGGING, SV_SHOVEL);
+    else if (one_in_(3))
+        k_idx = lookup_kind(TV_QUIVER, 1);
     else if (one_in_(5))
         k_idx = lookup_kind(TV_DIGGING, SV_PICK);
     else
