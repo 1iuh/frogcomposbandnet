@@ -6362,6 +6362,7 @@ static bool travel_abort(void)
     bool stop = TRUE;
     cave_type *c_ptr;
 
+
     /* Where we came from */
     prev_dir = find_prevdir;
 
@@ -6373,7 +6374,11 @@ static bool travel_abort(void)
         if (travel.cost[py+ddy_ddd[i]][px+ddx_ddd[i]] < travel.cost[py][px]) stop = FALSE;
     }
 
-    if (stop) return (TRUE);
+    if (stop)
+    {
+        msg_print("Too far away from the destination,");
+        return (TRUE);
+    } 
 
     /* Cannot travel when blind */
     if (p_ptr->blind || no_lite())
@@ -6424,7 +6429,7 @@ static bool travel_abort(void)
 			if (m_ptr->ml) {
                 char m_name[80];
                 monster_desc(m_name, m_ptr, 0);
-                msg_format("You see a %s here.\n", m_name);
+                msg_format("You see <color:R>%s</color> here.\n", m_name);
 				return TRUE;
             }
 		}
@@ -6442,7 +6447,7 @@ static bool travel_abort(void)
             if (m_ptr->ml && (c_ptr->info & CAVE_VIEW) && is_hostile(m_ptr)){
                 char m_name[80];
                 monster_desc(m_name, m_ptr, 0);
-                msg_format("You see %s here.", m_name);
+                msg_format("You see <color:R>%s</color> here.\n", m_name);
                 return TRUE; /* Visible monster */
             }
         }
@@ -6474,12 +6479,12 @@ void travel_step(void)
     {
         if (travel.run == 255)
             if (travel.mode == TRAVEL_MODE_AUTOEXPLORE)
-                msg_print("Auto Explore aborted.");
+                msg_print("Auto explore aborted.");
             else
                 msg_print("No route is found!");
         else
             if (travel.mode == TRAVEL_MODE_AUTOEXPLORE)
-                msg_print("Auto Explore aborted.");
+                msg_print("Auto explore aborted.");
             else
                 msg_print("travel is aborted.");
         disturb(0, 0);

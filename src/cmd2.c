@@ -2499,15 +2499,17 @@ static bool _travel_next_obj(int mode)
 
 bool has_unmarked_floor(int target_x, int target_y)
 {
+    int count = 0;
     for (int x = -1; x < 2; x++) {
         for (int y = -1; y < 2; y++) {
             if (in_bounds2(target_y + y, target_x + x)) {
                 if (!(cave[y+target_y][x+target_x].info & CAVE_MARK)) {
-                    return TRUE;
+                    count++;
                 }
             }
         }
     }
+    if (count > 0 && count < 8) return TRUE;
     return FALSE;
 }
 
