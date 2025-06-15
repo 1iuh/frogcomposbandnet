@@ -6376,7 +6376,7 @@ static bool travel_abort(void)
 
     if (stop)
     {
-        msg_print("Too far away from the destination,");
+        msg_print("No route is found,");
         return (TRUE);
     } 
 

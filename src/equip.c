@@ -502,7 +502,7 @@ void equip_wield_ui(void)
     {
         int amt = obj->number;
         assert(equip_find_obj(TV_QUIVER, SV_ANY));
-        if (quiver_capacity() <= quiver_count(NULL))
+        if (equip_find_obj(TV_QUIVER, SV_QUIVER) && quiver_capacity() <= quiver_count(NULL))
         {
             msg_print("Your quiver is full.");
             return;
