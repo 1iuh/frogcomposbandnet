@@ -999,6 +999,12 @@ void fame_on_failure(void)
     p_ptr->fame -= dec;
 }
 
+void gain_cookie(int amt)
+{
+    p_ptr->cookie += amt;
+    msg_format("<color:R>You got %d cookie%s.</color>", amt, (amt == 1) ? "" : "s");
+}
+
 void gain_fame(int amt)
 {
     if (coffee_break == SPEED_INSTA_COFFEE)

@@ -152,4 +152,4 @@ Gives you access to the Shuffle spell, and automatically gives Self Knowledge if
 </style>
 
 
-<color:s>Automatically generated for FrogComposband 7.1.salmiak.</color>
+<color:s>Automatically generated for FrogComposband 7.2.salmiak.</color>

@@ -445,5 +445,5 @@ weakness.
 
 
 
-Automatically generated for FrogComposband 7.1.salmiak.
+Automatically generated for FrogComposband 7.2.salmiak.
 

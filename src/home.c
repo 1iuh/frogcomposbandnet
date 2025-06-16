@@ -566,11 +566,13 @@ static void _get(_ui_context_ptr context)
             if (!msg_input_num("Quantity", &amt, 1, obj->number)) continue;
         }
 
+        int cookie_requirement = calculate_obj_cookie_requirement(obj);
+
 
         if (inv_loc(context->inv) == INV_MUSEUM)
         {
-            if(p_ptr->lev < calculate_obj_level_requirement(obj)) {
-                msg_print("<color:R>You are not high enough level to get this item from the museum.</color>");
+            if(p_ptr->cookie < cookie_requirement) {
+                msg_print("<color:R>You have no enough cookies to get this item.</color>");
                 continue;
             }
             if(!_sync_get(obj)) {
@@ -578,6 +580,8 @@ static void _get(_ui_context_ptr context)
                 continue;
             }
         }
+        p_ptr->cookie -= cookie_requirement;
+
         if (amt < obj->number)
         {
             obj_t copy = *obj;

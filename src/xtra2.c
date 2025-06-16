@@ -3003,6 +3003,12 @@ bool mon_take_hit(int m_idx, int dam, int type, bool *fear, cptr note)
                         gain_fame(1);
                 }
 
+
+                if (one_in_(r_ptr->level / 10 + 1) ) {
+                    gain_cookie(1);
+                }
+
+
                 /* Mega-Hack -- Banor & Lupart */
                 if ((m_ptr->r_idx == MON_BANOR) || (m_ptr->r_idx == MON_LUPART))
                 {

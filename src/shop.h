@@ -92,7 +92,7 @@ extern bool     town_visited(int which);
 extern cptr     town_name(int which);
 
 extern int      town_service_price(int price);
-extern int      calculate_obj_level_requirement(obj_ptr obj);
+extern int      calculate_obj_cookie_requirement(obj_ptr obj);
 
 extern void     birth_shop_items(void);
 #endif
