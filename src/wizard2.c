@@ -1586,7 +1586,10 @@ void do_cmd_debug(void)
     case '?':
         do_cmd_help();
         break;
-
+    /* Cure all maladies */
+    case 'G':
+        gain_cookie(1);
+        break;
     /* Cure all maladies */
     case 'a':
         do_cmd_wiz_cure_all();

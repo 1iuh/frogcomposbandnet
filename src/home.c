@@ -579,8 +579,8 @@ static void _get(_ui_context_ptr context)
                 msg_print("<color:R>Failed to get item from museum. Please try again later.</color>");
                 continue;
             }
+            p_ptr->cookie -= cookie_requirement;
         }
-        p_ptr->cookie -= cookie_requirement;
 
         if (amt < obj->number)
         {
