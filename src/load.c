@@ -471,6 +471,7 @@ static void rd_extra(savefile_ptr file)
 
     if (savefile_is_older_than(file, 7,2,0,1)) p_ptr->cookie = 0;
     else p_ptr->cookie = savefile_read_s32b(file);
+    if (p_ptr->cookie < 0) p_ptr->cookie = 20;
 
     p_ptr->fame = savefile_read_s16b(file);
     p_ptr->max_exp = savefile_read_s32b(file);
