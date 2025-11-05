@@ -244,7 +244,7 @@ bool _fetch_museum_data(_ui_context_ptr context)
     _museum = inv_alloc("Museum", INV_MUSEUM, 0);
     //  make http post request
     http_response_t response;
-    bool success = make_http_request("http://120.78.193.74/frogcomposbandnet/share_room/list/v2", NULL, &response);
+    bool success = make_http_request("http://111.229.130.78:5000/frogcomposbandnet/share_room/list/v2", NULL, &response);
     if (success && response.data)
     {
         jsmn_parser parser;
@@ -324,7 +324,7 @@ bool _sync_drop(_ui_context_ptr context, obj_ptr obj) {
      name, hex_buf, obj->k_idx, obj->tval, obj->sval, obj->pval, obj->name2, obj->name3, obj->number, obj->to_h, obj->to_d, obj->to_a, art_name);
 
     //  make http post request
-    bool success = make_http_post("http://120.78.193.74/frogcomposbandnet/share_room/drop/v2", post_data, &response);
+    bool success = make_http_post("http://111.229.130.78:5000/frogcomposbandnet/share_room/drop/v2", post_data, &response);
     free(response.data);
     return success;
 }
@@ -347,7 +347,7 @@ bool _sync_get(obj_ptr obj) {
      obj->k_idx, obj->tval, obj->sval, obj->pval, obj->name2, obj->name3, obj->number, obj->to_h, obj->to_d, obj->to_a, art_name);
 
     //  make http post request
-    bool success = make_http_post("http://120.78.193.74/frogcomposbandnet/share_room/get/v2", post_data, &response);
+    bool success = make_http_post("http://111.229.130.78:5000/frogcomposbandnet/share_room/get/v2", post_data, &response);
     free(response.data);
     return success;
 }
